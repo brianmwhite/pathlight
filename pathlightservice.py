@@ -52,6 +52,7 @@ def lights_on():
 def lights_off():
     pixels.fill((0, 0, 0, 0))
     pixels.show()
+    time.sleep(60)
 
 def main():
     print("started path light service...")
