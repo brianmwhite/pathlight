@@ -66,12 +66,9 @@ def main():
 
     while True:
         now = datetime.now(tz=timezone.utc)
-        sun_location_data = sun(home_location.observer, tzinfo=timezone.utc)
+        sun_location_data = sun(home_location.observer, date=now, tzinfo=timezone.utc)
 
-        sunrise = sun_location_data["sunrise"]
-        sunset = sun_location_data["sunset"]
-
-        is_daylight = (sunrise < now > sunset)
+        is_daylight = (now > sun_location_data["sunrise"] and now < sun_location_data["sunset"])
 
         if is_daylight:
             lights_off()
