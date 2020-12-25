@@ -1,6 +1,7 @@
 import time
 from datetime import datetime
 from datetime import timezone
+import random
 
 from astral import LocationInfo
 from astral.sun import sun
@@ -22,9 +23,11 @@ pixels = neopixel.NeoPixel(
 
 RED = (255, 0, 0, 0)
 GREEN = (0, 255, 0, 0)
+color_options = (RED, GREEN)
+
 PIXELS_PER_RING = 12
 
-def lights_on():
+def xmas_alternating():
     pixels[0:11] = [RED] * PIXELS_PER_RING
     pixels[24:35] = [RED] * PIXELS_PER_RING
     pixels[48:59] = [RED] * PIXELS_PER_RING
@@ -48,6 +51,21 @@ def lights_on():
 
     pixels.show()
     time.sleep(1)
+
+def xmas_random():
+    pixels[0:11] = [random.choice(color_options)] * PIXELS_PER_RING
+    pixels[12:23] = [random.choice(color_options)] * PIXELS_PER_RING
+    pixels[24:35] = [random.choice(color_options)] * PIXELS_PER_RING
+    pixels[36:47] = [random.choice(color_options)] * PIXELS_PER_RING
+    pixels[48:59] = [random.choice(color_options)] * PIXELS_PER_RING
+    pixels[60:71] = [random.choice(color_options)] * PIXELS_PER_RING
+    pixels[72:83] = [random.choice(color_options)] * PIXELS_PER_RING
+
+    pixels.show()
+    time.sleep(1)   
+
+def lights_on():
+    xmas_random()
 
 def lights_off():
     pixels.fill((0, 0, 0, 0))
