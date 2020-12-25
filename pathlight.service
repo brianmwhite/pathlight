@@ -1,0 +1,12 @@
+[Unit]
+Description=Path Light
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+ExecStart=/usr/bin/env python3 /home/pi/pathlightservice.py
+
+[Install]
+WantedBy=multi-user.target
