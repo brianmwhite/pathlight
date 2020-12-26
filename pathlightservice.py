@@ -62,7 +62,7 @@ def xmas_random():
     pixels[72:83] = [random.choice(color_options)] * PIXELS_PER_RING
 
     pixels.show()
-    time.sleep(1)   
+    time.sleep(random.uniform(0,2))
 
 def lights_on():
     xmas_random()
