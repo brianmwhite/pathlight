@@ -21,13 +21,17 @@ pixels = neopixel.NeoPixel(
     PIXEL_DATA_PIN, NUMBER_OF_TOTAL_LINKED_PIXELS, brightness=1.0, auto_write=False, pixel_order=ORDER
 )
 
-RED = (255, 0, 0, 0)
-GREEN = (0, 255, 0, 0)
-color_options = (RED, GREEN)
-
 PIXELS_PER_RING = 12
 
+def default():
+    pixels.fill((0, 0, 0, 255))
+    pixels.show()
+    time.sleep(60)
+
 def xmas_alternating():
+    RED = (255, 0, 0, 0)
+    GREEN = (0, 255, 0, 0)
+
     pixels[0:11] = [RED] * PIXELS_PER_RING
     pixels[24:35] = [RED] * PIXELS_PER_RING
     pixels[48:59] = [RED] * PIXELS_PER_RING
@@ -53,6 +57,31 @@ def xmas_alternating():
     time.sleep(1)
 
 def xmas_random():
+    RED = (255, 0, 0, 0)
+    GREEN = (0, 255, 0, 0)
+    color_options = (RED, GREEN)
+
+    pixels[0:11] = [random.choice(color_options)] * PIXELS_PER_RING
+    pixels[12:23] = [random.choice(color_options)] * PIXELS_PER_RING
+    pixels[24:35] = [random.choice(color_options)] * PIXELS_PER_RING
+    pixels[36:47] = [random.choice(color_options)] * PIXELS_PER_RING
+    pixels[48:59] = [random.choice(color_options)] * PIXELS_PER_RING
+    pixels[60:71] = [random.choice(color_options)] * PIXELS_PER_RING
+    pixels[72:83] = [random.choice(color_options)] * PIXELS_PER_RING
+
+    pixels.show()
+    time.sleep(random.uniform(0,2))
+
+def newyears_random():
+    blue = (0, 0, 255)
+    cyan = (0, 255, 255)
+    azure = (0, 128, 255)
+    midnight = (25, 25, 112)
+    royal_blue = (45, 90, 255)
+    medium_blue = (0,0,155)
+
+    color_options = (blue, cyan, azure, midnight, royal_blue, medium_blue)
+
     pixels[0:11] = [random.choice(color_options)] * PIXELS_PER_RING
     pixels[12:23] = [random.choice(color_options)] * PIXELS_PER_RING
     pixels[24:35] = [random.choice(color_options)] * PIXELS_PER_RING
@@ -65,7 +94,7 @@ def xmas_random():
     time.sleep(random.uniform(0,2))
 
 def lights_on():
-    xmas_random()
+    newyears_random()
 
 def lights_off():
     pixels.fill((0, 0, 0, 0))
