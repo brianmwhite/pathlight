@@ -10,6 +10,12 @@ from astral.sun import night
 import board
 import neopixel
 
+# systemd commands
+#sudo systemctl start pathlight
+#sudo systemctl stop pathlight
+#sudo systemctl restart pathlight
+#systemctl status pathlight
+#journalctl -u pathlight -f
 
 PIXEL_DATA_PIN = board.D18
 
