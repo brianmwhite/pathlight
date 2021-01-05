@@ -100,7 +100,7 @@ def newyears_random():
     time.sleep(random.uniform(0,2))
 
 def lights_on():
-    newyears_random()
+    default()
 
 def lights_off():
     pixels.fill((0, 0, 0, 0))
