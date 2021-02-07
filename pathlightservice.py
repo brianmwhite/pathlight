@@ -1,12 +1,8 @@
+import os
+import signal
 import time
-from datetime import datetime
-from datetime import timezone
 import random
-
-from astral import LocationInfo
-from astral.sun import sun
-from astral.sun import night
-
+import paho.mqtt.client as mqtt
 import board
 import neopixel
 
@@ -16,6 +12,21 @@ import neopixel
 #sudo systemctl restart pathlight
 #systemctl status pathlight
 #journalctl -u pathlight -f
+
+path_light_is_on = False
+last_time_status_check_in = 0
+status_checkin_delay = 60.0
+
+MQTT_HOST = os.environ["MQTT_HOST"]
+MQTT_PORT = int(os.environ["MQTT_PORT"])
+
+MQTT_SETON_PATH = "home/outside/switches/pathlight/setOn"
+MQTT_GETON_PATH = "home/outside/switches/pathlight/getOn"
+
+ON_VALUE = "ON"
+OFF_VALUE = "OFF"
+
+LIGHT_PATTERN = "DEFAULT"
 
 PIXEL_DATA_PIN = board.D18
 
@@ -29,122 +40,157 @@ pixels = neopixel.NeoPixel(
 
 PIXELS_PER_RING = 12
 
-def default():
-    pixels.fill((0, 0, 0, 255))
-    pixels.show()
-    time.sleep(60)
 
-def xmas_alternating():
-    RED = (255, 0, 0, 0)
-    GREEN = (0, 255, 0, 0)
+class exit_monitor_setup:
+    exit_now_flag_raised = False
 
-    pixels[0:11] = [RED] * PIXELS_PER_RING
-    pixels[24:35] = [RED] * PIXELS_PER_RING
-    pixels[48:59] = [RED] * PIXELS_PER_RING
-    pixels[72:83] = [RED] * PIXELS_PER_RING
+    def __init__(self):
+        signal.signal(signal.SIGINT, self.exit_gracefully)
+        signal.signal(signal.SIGTERM, self.exit_gracefully)
 
-    pixels[12:23] = [GREEN] * PIXELS_PER_RING
-    pixels[36:47] = [GREEN] * PIXELS_PER_RING
-    pixels[60:71] = [GREEN] * PIXELS_PER_RING
+    def exit_gracefully(self, signum, frame):
+        self.exit_now_flag_raised = True
 
-    pixels.show()
-    time.sleep(1)   
 
-    pixels[0:11] = [GREEN] * PIXELS_PER_RING
-    pixels[24:35] = [GREEN] * PIXELS_PER_RING
-    pixels[48:59] = [GREEN] * PIXELS_PER_RING
-    pixels[72:83] = [GREEN] * PIXELS_PER_RING
+# The callback for when the client receives a CONNACK response from the server.
+def on_connect(client, userdata, flags, rc):
+    print("MQTT: Connected with result code "+str(rc))
 
-    pixels[12:23] = [RED] * PIXELS_PER_RING
-    pixels[36:47] = [RED] * PIXELS_PER_RING
-    pixels[60:71] = [RED] * PIXELS_PER_RING
+    # Subscribing in on_connect() means that if we lose the connection and
+    # reconnect then subscriptions will be renewed.
+    client.subscribe("$SYS/#")
+    client.subscribe(MQTT_SETON_PATH)
 
-    pixels.show()
-    time.sleep(1)
 
-def xmas_random():
-    RED = (255, 0, 0, 0)
-    GREEN = (0, 255, 0, 0)
-    color_options = (RED, GREEN)
+def on_disconnect(client, userdata, rc):
+    print("MQTT: disconnecting reason " + str(rc))
 
-    pixels[0:11] = [random.choice(color_options)] * PIXELS_PER_RING
-    pixels[12:23] = [random.choice(color_options)] * PIXELS_PER_RING
-    pixels[24:35] = [random.choice(color_options)] * PIXELS_PER_RING
-    pixels[36:47] = [random.choice(color_options)] * PIXELS_PER_RING
-    pixels[48:59] = [random.choice(color_options)] * PIXELS_PER_RING
-    pixels[60:71] = [random.choice(color_options)] * PIXELS_PER_RING
-    pixels[72:83] = [random.choice(color_options)] * PIXELS_PER_RING
 
-    pixels.show()
-    time.sleep(random.uniform(0,2))
+# The callback for when a PUBLISH message is received from the server.
+def on_message(client, userdata, message):
+    global last_time_status_check_in
 
-def newyears_random():
-    blue = (0, 0, 255)
-    cyan = (0, 255, 255)
-    azure = (0, 128, 255)
-    midnight = (25, 25, 112)
-    royal_blue = (45, 90, 255)
-    medium_blue = (0,0,155)
+    if message.topic == MQTT_SETON_PATH:
+        last_time_status_check_in = time.monotonic()
 
-    color_options = (blue, cyan, azure, midnight, royal_blue, medium_blue)
+        if str(message.payload.decode("utf-8")) == ON_VALUE:
+            lights_on(showPrint=True)
+            client.publish(MQTT_GETON_PATH, ON_VALUE)
+        elif str(message.payload.decode("utf-8")) == OFF_VALUE:
+            lights_off(showPrint=True)
+            client.publish(MQTT_GETON_PATH, OFF_VALUE)
 
-    pixels[0:11] = [random.choice(color_options)] * PIXELS_PER_RING
-    pixels[12:23] = [random.choice(color_options)] * PIXELS_PER_RING
-    pixels[24:35] = [random.choice(color_options)] * PIXELS_PER_RING
-    pixels[36:47] = [random.choice(color_options)] * PIXELS_PER_RING
-    pixels[48:59] = [random.choice(color_options)] * PIXELS_PER_RING
-    pixels[60:71] = [random.choice(color_options)] * PIXELS_PER_RING
-    pixels[72:83] = [random.choice(color_options)] * PIXELS_PER_RING
 
-    pixels.show()
-    time.sleep(random.uniform(0,2))
+def lights_on(showPrint = False):
+    global path_light_is_on
+    path_light_is_on = True
+    light_pattern_delay = 60
+    if showPrint:
+        print("turning lights ON ....")
 
-def valentines_random():
-    red = (255, 0, 0, 0)
-    white = (0, 0, 0, 255)
-    pink = (255, 192, 203, 0)
+    if LIGHT_PATTERN == "DEFAULT":
+        pixels.fill((0, 0, 0, 255))
+        pixels.show()
+    elif LIGHT_PATTERN == "XMAS":
+        RED = (255, 0, 0, 0)
+        GREEN = (0, 255, 0, 0)
+        color_options = (RED, GREEN)
 
-    color_options = (red, white, pink)
+        pixels[0:11] = [random.choice(color_options)] * PIXELS_PER_RING
+        pixels[12:23] = [random.choice(color_options)] * PIXELS_PER_RING
+        pixels[24:35] = [random.choice(color_options)] * PIXELS_PER_RING
+        pixels[36:47] = [random.choice(color_options)] * PIXELS_PER_RING
+        pixels[48:59] = [random.choice(color_options)] * PIXELS_PER_RING
+        pixels[60:71] = [random.choice(color_options)] * PIXELS_PER_RING
+        pixels[72:83] = [random.choice(color_options)] * PIXELS_PER_RING
 
-    pixels[0:11] = [random.choice(color_options)] * PIXELS_PER_RING
-    pixels[12:23] = [random.choice(color_options)] * PIXELS_PER_RING
-    pixels[24:35] = [random.choice(color_options)] * PIXELS_PER_RING
-    pixels[36:47] = [random.choice(color_options)] * PIXELS_PER_RING
-    pixels[48:59] = [random.choice(color_options)] * PIXELS_PER_RING
-    pixels[60:71] = [random.choice(color_options)] * PIXELS_PER_RING
-    pixels[72:83] = [random.choice(color_options)] * PIXELS_PER_RING
+        pixels.show()
+        light_pattern_delay = random.uniform(0,2)
+    elif LIGHT_PATTERN == "NEWYEARS":
+        blue = (0, 0, 255)
+        cyan = (0, 255, 255)
+        azure = (0, 128, 255)
+        midnight = (25, 25, 112)
+        royal_blue = (45, 90, 255)
+        medium_blue = (0,0,155)
 
-    pixels.show()
-    time.sleep(random.uniform(0,2))
+        color_options = (blue, cyan, azure, midnight, royal_blue, medium_blue)
 
-def lights_on():
-    default()
+        pixels[0:11] = [random.choice(color_options)] * PIXELS_PER_RING
+        pixels[12:23] = [random.choice(color_options)] * PIXELS_PER_RING
+        pixels[24:35] = [random.choice(color_options)] * PIXELS_PER_RING
+        pixels[36:47] = [random.choice(color_options)] * PIXELS_PER_RING
+        pixels[48:59] = [random.choice(color_options)] * PIXELS_PER_RING
+        pixels[60:71] = [random.choice(color_options)] * PIXELS_PER_RING
+        pixels[72:83] = [random.choice(color_options)] * PIXELS_PER_RING
 
-def lights_off():
+        pixels.show()
+        light_pattern_delay = random.uniform(0,2)
+    elif LIGHT_PATTERN == "VALENTINES":
+        red = (255, 0, 0, 0)
+        white = (0, 0, 0, 255)
+        pink = (255, 192, 203, 0)
+
+        color_options = (red, white, pink)
+
+        pixels[0:11] = [random.choice(color_options)] * PIXELS_PER_RING
+        pixels[12:23] = [random.choice(color_options)] * PIXELS_PER_RING
+        pixels[24:35] = [random.choice(color_options)] * PIXELS_PER_RING
+        pixels[36:47] = [random.choice(color_options)] * PIXELS_PER_RING
+        pixels[48:59] = [random.choice(color_options)] * PIXELS_PER_RING
+        pixels[60:71] = [random.choice(color_options)] * PIXELS_PER_RING
+        pixels[72:83] = [random.choice(color_options)] * PIXELS_PER_RING
+
+        pixels.show()
+        light_pattern_delay = random.uniform(0,2)
+    return light_pattern_delay
+
+
+def lights_off(showPrint=False):
+    global path_light_is_on
+    path_light_is_on = False
+    if showPrint:
+        print("turning lights OFF ....")
+
     pixels.fill((0, 0, 0, 0))
     pixels.show()
-    time.sleep(60)
 
-def main():
-    print("started path light service...")
-    lights_off()
-    
-    home_location = LocationInfo('home', 'US', 'US/Eastern', 36.083660, -80.442180)
-    print(datetime.now(tz=timezone.utc))
-    sun_location_data = sun(home_location.observer, tzinfo=timezone.utc)
-    print(sun_location_data["sunset"])
-    print(sun_location_data["dawn"])
-
-    while True:
-        now = datetime.now(tz=timezone.utc)
-        sun_location_data = sun(home_location.observer, date=now, tzinfo=timezone.utc)
-
-        is_daylight = (now > sun_location_data["dawn"] and now < sun_location_data["sunset"])
-
-        if is_daylight:
-            lights_off()
-        else:
-            lights_on()
 
 if __name__ == "__main__":
-    main()
+    exit_monitor = exit_monitor_setup()
+
+    client = mqtt.Client()
+	client.on_connect = on_connect
+	client.on_disconnect = on_disconnect
+	client.on_message = on_message
+
+    client.connect(MQTT_HOST, MQTT_PORT, 60)
+    client.loop_start()
+    # see below, not sure if sleep is needed here, probably not
+    time.sleep(0.001)
+
+    print("started path light service...")
+    last_time_status_check_in = time.monotonic()
+    last_time_pattern_update = time.monotonic()
+
+    while not exit_monitor.exit_now_flag_raised:
+        # added time.sleep 1 ms after seeing 100% CPU usage
+        # found this solution https://stackoverflow.com/a/41749754
+        time.sleep(0.001)
+        current_seconds_count = time.monotonic()
+        pattern_delay = 0
+        
+        if path_light_is_on and (current_seconds_count - last_time_pattern_update > pattern_delay):
+            pattern_delay = lights_on()
+        
+        if current_seconds_count - last_time_status_check_in > status_checkin_delay:
+			last_time_status_check_in = current_seconds_count
+			if path_light_is_on:
+				client.publish(MQTT_GETON_PATH, ON_VALUE)
+			else:
+				client.publish(MQTT_GETON_PATH, OFF_VALUE)
+
+	client.loop_stop()
+	client.disconnect()
+	pixels.deinit()
+	print("pathlight service ended")
