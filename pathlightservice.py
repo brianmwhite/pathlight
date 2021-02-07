@@ -99,6 +99,24 @@ def newyears_random():
     pixels.show()
     time.sleep(random.uniform(0,2))
 
+def valentines_random():
+    red = (255, 0, 0, 0)
+    white = (0, 0, 0, 255)
+    pink = (255, 192, 203, 0)
+
+    color_options = (red, white, pink)
+
+    pixels[0:11] = [random.choice(color_options)] * PIXELS_PER_RING
+    pixels[12:23] = [random.choice(color_options)] * PIXELS_PER_RING
+    pixels[24:35] = [random.choice(color_options)] * PIXELS_PER_RING
+    pixels[36:47] = [random.choice(color_options)] * PIXELS_PER_RING
+    pixels[48:59] = [random.choice(color_options)] * PIXELS_PER_RING
+    pixels[60:71] = [random.choice(color_options)] * PIXELS_PER_RING
+    pixels[72:83] = [random.choice(color_options)] * PIXELS_PER_RING
+
+    pixels.show()
+    time.sleep(random.uniform(0,2))
+
 def lights_on():
     default()
 
