@@ -1,0 +1,14 @@
+{
+    "type": "switch",
+    "name": "Sidewalk Lights",
+    "topics": {
+        "getOn": "home/outside/switches/pathlight/getOn",
+        "setOn": "home/outside/switches/pathlight/setOn"
+    },
+    "confirmationPeriodms": 1000,
+    "confirmationIndicateOffline": true,
+    "integerValue": false,
+    "onValue": "ON",
+    "offValue": "OFF",
+    "accessory": "mqttthing"
+}

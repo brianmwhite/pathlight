@@ -8,11 +8,18 @@ import board
 import neopixel
 
 # systemd commands
+
 # sudo systemctl start pathlight
 # sudo systemctl stop pathlight
 # sudo systemctl restart pathlight
+
 # systemctl status pathlight
 # journalctl -u pathlight -f
+
+# sudo systemctl disable pathlight
+# sudo cp pathlight.service /etc/systemd/system/
+# sudo systemctl enable pathlight
+
 
 path_light_is_on = False
 last_time_status_check_in = 0
@@ -214,16 +221,18 @@ if __name__ == "__main__":
     print("started path light service...")
     last_time_status_check_in = time.monotonic()
     last_time_pattern_update = time.monotonic()
+    
+    pattern_delay = 0
 
     while not exit_monitor.exit_now_flag_raised:
         # added time.sleep 1 ms after seeing 100% CPU usage
         # found this solution https://stackoverflow.com/a/41749754
         time.sleep(0.001)
         current_seconds_count = time.monotonic()
-        pattern_delay = 0
 
         if path_light_is_on and (current_seconds_count - last_time_pattern_update > pattern_delay):
             pattern_delay = lights_on()
+            last_time_pattern_update = time.monotonic()
 
         if current_seconds_count - last_time_status_check_in > status_checkin_delay:
             last_time_status_check_in = current_seconds_count
@@ -232,7 +241,7 @@ if __name__ == "__main__":
             else:
                 client.publish(MQTT_GETON_PATH, OFF_VALUE)
 
-        client.loop_stop()
-        client.disconnect()
-        pixels.deinit()
-        print("pathlight service ended")
+    client.loop_stop()
+    client.disconnect()
+    pixels.deinit()
+    print("pathlight service ended")
