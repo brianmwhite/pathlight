@@ -1,32 +1,31 @@
 import os
 import signal
 import time
+from datetime import date
 import random
 import paho.mqtt.client as mqtt
 import board
 import neopixel
 
 # systemd commands
-#sudo systemctl start pathlight
-#sudo systemctl stop pathlight
-#sudo systemctl restart pathlight
-#systemctl status pathlight
-#journalctl -u pathlight -f
+# sudo systemctl start pathlight
+# sudo systemctl stop pathlight
+# sudo systemctl restart pathlight
+# systemctl status pathlight
+# journalctl -u pathlight -f
 
 path_light_is_on = False
 last_time_status_check_in = 0
 status_checkin_delay = 60.0
 
-MQTT_HOST = os.environ["MQTT_HOST"]
-MQTT_PORT = int(os.environ["MQTT_PORT"])
+MQTT_HOST = "pihome.local"
+MQTT_PORT = 1883
 
 MQTT_SETON_PATH = "home/outside/switches/pathlight/setOn"
 MQTT_GETON_PATH = "home/outside/switches/pathlight/getOn"
 
 ON_VALUE = "ON"
 OFF_VALUE = "OFF"
-
-LIGHT_PATTERN = "DEFAULT"
 
 PIXEL_DATA_PIN = board.D18
 
@@ -81,17 +80,60 @@ def on_message(client, userdata, message):
             client.publish(MQTT_GETON_PATH, OFF_VALUE)
 
 
-def lights_on(showPrint = False):
+def get_pattern_by_date(date_to_check):
+    date_key = date_to_check.strftime("%m/%d")
+    pattern_dates = {
+        "12/01": "christmas",
+        "12/02": "christmas",
+        "12/03": "christmas",
+        "12/04": "christmas",
+        "12/05": "christmas",
+        "12/06": "christmas",
+        "12/07": "christmas",
+        "12/08": "christmas",
+        "12/09": "christmas",
+        "12/10": "christmas",
+        "12/11": "christmas",
+        "12/12": "christmas",
+        "12/13": "christmas",
+        "12/14": "christmas",
+        "12/15": "christmas",
+        "12/16": "christmas",
+        "12/17": "christmas",
+        "12/18": "christmas",
+        "12/19": "christmas",
+        "12/20": "christmas",
+        "12/21": "christmas",
+        "12/22": "christmas",
+        "12/23": "christmas",
+        "12/24": "christmas",
+        "12/25": "christmas",
+        "12/26": "christmas",
+        "12/27": "newyears",
+        "12/28": "newyears",
+        "12/29": "newyears",
+        "12/30": "newyears",
+        "12/31": "newyears",
+        "01/01": "newyears",
+        "01/02": "newyears",
+        "02/14": "valentines"
+    }
+    return pattern_dates.get(date_key, "default")
+
+
+def lights_on(showPrint=False):
     global path_light_is_on
     path_light_is_on = True
     light_pattern_delay = 60
     if showPrint:
         print("turning lights ON ....")
 
-    if LIGHT_PATTERN == "DEFAULT":
+    light_pattern = get_pattern_by_date(date.today())
+
+    if light_pattern == "default":
         pixels.fill((0, 0, 0, 255))
         pixels.show()
-    elif LIGHT_PATTERN == "XMAS":
+    elif light_pattern == "christmas":
         RED = (255, 0, 0, 0)
         GREEN = (0, 255, 0, 0)
         color_options = (RED, GREEN)
@@ -105,14 +147,14 @@ def lights_on(showPrint = False):
         pixels[72:83] = [random.choice(color_options)] * PIXELS_PER_RING
 
         pixels.show()
-        light_pattern_delay = random.uniform(0,2)
-    elif LIGHT_PATTERN == "NEWYEARS":
+        light_pattern_delay = random.uniform(0, 2)
+    elif light_pattern == "newyears":
         blue = (0, 0, 255)
         cyan = (0, 255, 255)
         azure = (0, 128, 255)
         midnight = (25, 25, 112)
         royal_blue = (45, 90, 255)
-        medium_blue = (0,0,155)
+        medium_blue = (0, 0, 155)
 
         color_options = (blue, cyan, azure, midnight, royal_blue, medium_blue)
 
@@ -125,8 +167,8 @@ def lights_on(showPrint = False):
         pixels[72:83] = [random.choice(color_options)] * PIXELS_PER_RING
 
         pixels.show()
-        light_pattern_delay = random.uniform(0,2)
-    elif LIGHT_PATTERN == "VALENTINES":
+        light_pattern_delay = random.uniform(0, 2)
+    elif light_pattern == "valentines":
         red = (255, 0, 0, 0)
         white = (0, 0, 0, 255)
         pink = (255, 192, 203, 0)
@@ -142,7 +184,7 @@ def lights_on(showPrint = False):
         pixels[72:83] = [random.choice(color_options)] * PIXELS_PER_RING
 
         pixels.show()
-        light_pattern_delay = random.uniform(0,2)
+        light_pattern_delay = random.uniform(0, 2)
     return light_pattern_delay
 
 
@@ -160,9 +202,9 @@ if __name__ == "__main__":
     exit_monitor = exit_monitor_setup()
 
     client = mqtt.Client()
-	client.on_connect = on_connect
-	client.on_disconnect = on_disconnect
-	client.on_message = on_message
+    client.on_connect = on_connect
+    client.on_disconnect = on_disconnect
+    client.on_message = on_message
 
     client.connect(MQTT_HOST, MQTT_PORT, 60)
     client.loop_start()
@@ -179,18 +221,18 @@ if __name__ == "__main__":
         time.sleep(0.001)
         current_seconds_count = time.monotonic()
         pattern_delay = 0
-        
+
         if path_light_is_on and (current_seconds_count - last_time_pattern_update > pattern_delay):
             pattern_delay = lights_on()
-        
-        if current_seconds_count - last_time_status_check_in > status_checkin_delay:
-			last_time_status_check_in = current_seconds_count
-			if path_light_is_on:
-				client.publish(MQTT_GETON_PATH, ON_VALUE)
-			else:
-				client.publish(MQTT_GETON_PATH, OFF_VALUE)
 
-	client.loop_stop()
-	client.disconnect()
-	pixels.deinit()
-	print("pathlight service ended")
+        if current_seconds_count - last_time_status_check_in > status_checkin_delay:
+            last_time_status_check_in = current_seconds_count
+            if path_light_is_on:
+                client.publish(MQTT_GETON_PATH, ON_VALUE)
+            else:
+                client.publish(MQTT_GETON_PATH, OFF_VALUE)
+
+        client.loop_stop()
+        client.disconnect()
+        pixels.deinit()
+        print("pathlight service ended")
