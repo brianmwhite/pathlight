@@ -45,10 +45,7 @@ pixels = neopixel.NeoPixel(
 
 PIXELS_PER_RING = 12
 
-class saved_data_model:
-    path_light_is_on = False
-
-saved_data = saved_data_model()
+path_light_is_on = False
 
 class exit_monitor_setup:
     exit_now_flag_raised = False
@@ -133,15 +130,15 @@ def get_pattern_by_date(date_to_check):
 
 
 def lights_on(change_state=True):
-    global saved_data
-    saved_data.path_light_is_on = True
+    global path_light_is_on
+    path_light_is_on = True
     light_pattern_delay = 60
    
     if change_state:
         print("turning lights ON ....")
         try:
             with open('pathlight.pickle', 'wb') as datafile:
-                pickle.dump(saved_data, datafile)
+                pickle.dump(path_light_is_on, datafile)
         except:
             pass
 
@@ -222,13 +219,13 @@ def lights_on(change_state=True):
 
 
 def lights_off(change_state=True):
-    global saved_data
-    saved_data.path_light_is_on = False
+    global path_light_is_on
+    path_light_is_on = False
     if change_state:
         print("turning lights OFF ....")
         try:
             with open('pathlight.pickle', 'wb') as datafile:
-                pickle.dump(saved_data, datafile)
+                pickle.dump(path_light_is_on, datafile)
         except:
             pass
 
@@ -241,9 +238,10 @@ if __name__ == "__main__":
 
     try:
         with open('pathlight.pickle', 'rb') as datafile:
-            saved_data = pickle.load(datafile)
-    except (FileNotFoundError, pickle.UnpicklingError):
-        pass
+            path_light_is_on = pickle.load(datafile)
+    # except (FileNotFoundError, pickle.UnpicklingError):
+        # print("file pickling error...")
+        # pass
 
     client = mqtt.Client()
     client.on_connect = on_connect
@@ -261,7 +259,7 @@ if __name__ == "__main__":
     
     pattern_delay = 0
 
-    if saved_data.path_light_is_on:
+    if path_light_is_on:
         lights_on()
     else:
         lights_off()
@@ -272,13 +270,13 @@ if __name__ == "__main__":
         time.sleep(0.001)
         current_seconds_count = time.monotonic()
 
-        if saved_data.path_light_is_on and (current_seconds_count - last_time_pattern_update > pattern_delay):
+        if path_light_is_on and (current_seconds_count - last_time_pattern_update > pattern_delay):
             pattern_delay = lights_on(change_state=False)
             last_time_pattern_update = time.monotonic()
 
         if current_seconds_count - last_time_status_check_in > status_checkin_delay:
             last_time_status_check_in = current_seconds_count
-            if saved_data.path_light_is_on:
+            if path_light_is_on:
                 client.publish(MQTT_GETON_PATH, ON_VALUE)
             else:
                 client.publish(MQTT_GETON_PATH, OFF_VALUE)
