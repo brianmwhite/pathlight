@@ -140,6 +140,7 @@ def lights_on(change_state=True):
         try:
             with open('pathlight.pickle', 'wb') as datafile:
                 pickle.dump(path_light_is_on, datafile)
+                print(f"saved pathlight state={path_light_is_on}")
         except:
             pass
 
@@ -227,6 +228,7 @@ def lights_off(change_state=True):
         try:
             with open('pathlight.pickle', 'wb') as datafile:
                 pickle.dump(path_light_is_on, datafile)
+                print(f"saved pathlight state={path_light_is_on}")
         except:
             pass
 
@@ -240,7 +242,9 @@ if __name__ == "__main__":
     try:
         with open('pathlight.pickle', 'rb') as datafile:
             path_light_is_on = pickle.load(datafile)
+            print(f"loaded pathlight state={path_light_is_on}")
     except (FileNotFoundError, pickle.UnpicklingError):
+        print("failed to load pathlight state, default=OFF")
         path_light_is_on = False
         pass
 
