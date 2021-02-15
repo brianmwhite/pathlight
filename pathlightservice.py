@@ -6,6 +6,7 @@ import random
 import paho.mqtt.client as mqtt
 import board
 import neopixel
+import pickle
 
 # systemd commands
 
@@ -82,10 +83,10 @@ def on_message(client, userdata, message):
         last_time_status_check_in = time.monotonic()
 
         if str(message.payload.decode("utf-8")) == ON_VALUE:
-            lights_on(showPrint=True)
+            lights_on()
             client.publish(MQTT_GETON_PATH, ON_VALUE)
         elif str(message.payload.decode("utf-8")) == OFF_VALUE:
-            lights_off(showPrint=True)
+            lights_off()
             client.publish(MQTT_GETON_PATH, OFF_VALUE)
 
 
@@ -130,12 +131,18 @@ def get_pattern_by_date(date_to_check):
     return pattern_dates.get(date_key, "default")
 
 
-def lights_on(showPrint=False):
+def lights_on(change_state=True):
     global saved_data
     saved_data.path_light_is_on = True
     light_pattern_delay = 60
-    if showPrint:
+   
+    if change_state:
         print("turning lights ON ....")
+        try:
+            with open('pathlight.pickle', 'wb') as datafile:
+                pickle.dump(saved_data, datafile)
+        except:
+            pass
 
     light_pattern = get_pattern_by_date(date.today())
 
@@ -197,11 +204,16 @@ def lights_on(showPrint=False):
     return light_pattern_delay
 
 
-def lights_off(showPrint=False):
+def lights_off(change_state=True):
     global saved_data
     saved_data.path_light_is_on = False
-    if showPrint:
+    if change_state:
         print("turning lights OFF ....")
+        try:
+            with open('pathlight.pickle', 'wb') as datafile:
+                pickle.dump(saved_data, datafile)
+        except:
+            pass
 
     pixels.fill((0, 0, 0, 0))
     pixels.show()
@@ -210,7 +222,11 @@ def lights_off(showPrint=False):
 if __name__ == "__main__":
     exit_monitor = exit_monitor_setup()
 
-
+    try:
+        with open('pathlight.pickle', 'rb') as datafile:
+            saved_data = pickle.load(datafile)
+    except (FileNotFoundError, pickle.UnpicklingError):
+        pass
 
     client = mqtt.Client()
     client.on_connect = on_connect
@@ -228,6 +244,11 @@ if __name__ == "__main__":
     
     pattern_delay = 0
 
+    if saved_data.path_light_is_on:
+        lights_on()
+    else:
+        lights_off()
+
     while not exit_monitor.exit_now_flag_raised:
         # added time.sleep 1 ms after seeing 100% CPU usage
         # found this solution https://stackoverflow.com/a/41749754
@@ -235,7 +256,7 @@ if __name__ == "__main__":
         current_seconds_count = time.monotonic()
 
         if saved_data.path_light_is_on and (current_seconds_count - last_time_pattern_update > pattern_delay):
-            pattern_delay = lights_on()
+            pattern_delay = lights_on(change_state=False)
             last_time_pattern_update = time.monotonic()
 
         if current_seconds_count - last_time_status_check_in > status_checkin_delay:
