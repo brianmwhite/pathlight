@@ -47,6 +47,7 @@ PIXELS_PER_RING = 12
 
 path_light_is_on = False
 
+
 class exit_monitor_setup:
     exit_now_flag_raised = False
 
@@ -133,7 +134,7 @@ def lights_on(change_state=True):
     global path_light_is_on
     path_light_is_on = True
     light_pattern_delay = 60
-   
+
     if change_state:
         print("turning lights ON ....")
         try:
@@ -239,9 +240,9 @@ if __name__ == "__main__":
     try:
         with open('pathlight.pickle', 'rb') as datafile:
             path_light_is_on = pickle.load(datafile)
-    # except (FileNotFoundError, pickle.UnpicklingError):
-        # print("file pickling error...")
-        # pass
+    except (FileNotFoundError, pickle.UnpicklingError):
+        path_light_is_on = False
+        pass
 
     client = mqtt.Client()
     client.on_connect = on_connect
@@ -256,7 +257,7 @@ if __name__ == "__main__":
     print("started path light service...")
     last_time_status_check_in = time.monotonic()
     last_time_pattern_update = time.monotonic()
-    
+
     pattern_delay = 0
 
     if path_light_is_on:
