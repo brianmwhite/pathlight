@@ -177,7 +177,7 @@ def lights_on(showPrint=False):
         light_pattern_delay = random.uniform(0, 2)
     elif light_pattern == "valentines":
         red = (255, 0, 0, 0)
-        white = (0, 0, 0, 255)
+        white = (255, 255, 255, 0)
         pink = (255, 192, 203, 0)
 
         color_options = (red, white, pink)
