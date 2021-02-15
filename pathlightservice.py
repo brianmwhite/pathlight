@@ -127,6 +127,7 @@ def get_pattern_by_date(date_to_check):
         "01/01": "newyears",
         "01/02": "newyears",
         "02/14": "valentines"
+        "03/17": "stpatricks"
     }
     return pattern_dates.get(date_key, "default")
 
@@ -190,6 +191,22 @@ def lights_on(change_state=True):
         pink = (255, 192, 203, 0)
 
         color_options = (red, white, pink)
+
+        pixels[0:11] = [random.choice(color_options)] * PIXELS_PER_RING
+        pixels[12:23] = [random.choice(color_options)] * PIXELS_PER_RING
+        pixels[24:35] = [random.choice(color_options)] * PIXELS_PER_RING
+        pixels[36:47] = [random.choice(color_options)] * PIXELS_PER_RING
+        pixels[48:59] = [random.choice(color_options)] * PIXELS_PER_RING
+        pixels[60:71] = [random.choice(color_options)] * PIXELS_PER_RING
+        pixels[72:83] = [random.choice(color_options)] * PIXELS_PER_RING
+
+        pixels.show()
+        light_pattern_delay = random.uniform(0, 2)
+    elif light_pattern == "stpatricks":
+        green = (255, 0, 0, 0)
+        white = (255, 255, 255, 0)
+
+        color_options = (green, white)
 
         pixels[0:11] = [random.choice(color_options)] * PIXELS_PER_RING
         pixels[12:23] = [random.choice(color_options)] * PIXELS_PER_RING
