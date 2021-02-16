@@ -45,7 +45,7 @@ pixels = neopixel.NeoPixel(
 
 PIXELS_PER_RING = 12
 
-path_light_state = {'path_light_is_on' = False, 'path_light_color' = (0, 0, 0, 255)}
+path_light_state = {'path_light_is_on': False, 'path_light_color': (0, 0, 0, 255)}
 
 
 class exit_monitor_setup:
