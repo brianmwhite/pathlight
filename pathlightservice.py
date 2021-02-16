@@ -47,6 +47,7 @@ PIXELS_PER_RING = 12
 
 path_light_state = {'path_light_is_on' = False, 'path_light_color' = (0, 0, 0, 255)}
 
+
 class exit_monitor_setup:
     exit_now_flag_raised = False
 
@@ -139,7 +140,8 @@ def lights_on(change_state=True):
         try:
             with open('pathlight.pickle', 'wb') as datafile:
                 pickle.dump(path_light_state, datafile)
-                print(f"saved pathlight state={path_light_state['path_light_is_on']}")
+                print(
+                    f"saved pathlight state={path_light_state['path_light_is_on']}")
         except:
             pass
 
@@ -227,7 +229,8 @@ def lights_off(change_state=True):
         try:
             with open('pathlight.pickle', 'wb') as datafile:
                 pickle.dump(path_light_state, datafile)
-                print(f"saved pathlight state={path_light_state['path_light_is_on']}")
+                print(
+                    f"saved pathlight state={path_light_state['path_light_is_on']}")
         except:
             pass
 
@@ -241,7 +244,8 @@ if __name__ == "__main__":
     try:
         with open('pathlight.pickle', 'rb') as datafile:
             path_light_state = pickle.load(datafile)
-            print(f"loaded pathlight state={path_light_state['path_light_is_on']}")
+            print(
+                f"loaded pathlight state={path_light_state['path_light_is_on']}")
     except (FileNotFoundError, pickle.UnpicklingError):
         print("failed to load pathlight state, default=OFF")
         path_light_state['path_light_is_on'] = False
