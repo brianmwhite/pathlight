@@ -33,6 +33,8 @@ MQTT_GETON_PATH = "home/outside/switches/pathlight/getOn"
 ON_VALUE = "ON"
 OFF_VALUE = "OFF"
 
+PICKLE_FILE_LOCATION = "/home/pi/pathlight.pickle"
+
 PIXEL_DATA_PIN = board.D18
 
 NUMBER_OF_TOTAL_LINKED_PIXELS = 84
@@ -138,7 +140,7 @@ def lights_on(change_state=True):
     if change_state:
         print("turning lights ON ....")
         try:
-            with open('pathlight.pickle', 'wb') as datafile:
+            with open(PICKLE_FILE_LOCATION, 'wb') as datafile:
                 pickle.dump(path_light_state, datafile)
                 print(
                     f"saved pathlight state={path_light_state['path_light_is_on']}")
@@ -227,7 +229,7 @@ def lights_off(change_state=True):
     if change_state:
         print("turning lights OFF ....")
         try:
-            with open('pathlight.pickle', 'wb') as datafile:
+            with open(PICKLE_FILE_LOCATION, 'wb') as datafile:
                 pickle.dump(path_light_state, datafile)
                 print(
                     f"saved pathlight state={path_light_state['path_light_is_on']}")
@@ -242,7 +244,7 @@ if __name__ == "__main__":
     exit_monitor = exit_monitor_setup()
 
     try:
-        with open('pathlight.pickle', 'rb') as datafile:
+        with open(PICKLE_FILE_LOCATION, 'rb') as datafile:
             path_light_state = pickle.load(datafile)
             print(
                 f"loaded pathlight state={path_light_state['path_light_is_on']}")
