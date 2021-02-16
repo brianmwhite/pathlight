@@ -45,8 +45,7 @@ pixels = neopixel.NeoPixel(
 
 PIXELS_PER_RING = 12
 
-path_light_is_on = False
-
+path_light_state = {'path_light_is_on' = False, 'path_light_color' = (0, 0, 0, 255)}
 
 class exit_monitor_setup:
     exit_now_flag_raised = False
@@ -131,16 +130,16 @@ def get_pattern_by_date(date_to_check):
 
 
 def lights_on(change_state=True):
-    global path_light_is_on
-    path_light_is_on = True
+    global path_light_state
+    path_light_state['path_light_is_on'] = True
     light_pattern_delay = 60
 
     if change_state:
         print("turning lights ON ....")
         try:
             with open('pathlight.pickle', 'wb') as datafile:
-                pickle.dump(path_light_is_on, datafile)
-                print(f"saved pathlight state={path_light_is_on}")
+                pickle.dump(path_light_state, datafile)
+                print(f"saved pathlight state={path_light_state['path_light_is_on']}")
         except:
             pass
 
@@ -221,14 +220,14 @@ def lights_on(change_state=True):
 
 
 def lights_off(change_state=True):
-    global path_light_is_on
-    path_light_is_on = False
+    global path_light_state
+    path_light_state['path_light_is_on'] = False
     if change_state:
         print("turning lights OFF ....")
         try:
             with open('pathlight.pickle', 'wb') as datafile:
-                pickle.dump(path_light_is_on, datafile)
-                print(f"saved pathlight state={path_light_is_on}")
+                pickle.dump(path_light_state, datafile)
+                print(f"saved pathlight state={path_light_state['path_light_is_on']}")
         except:
             pass
 
@@ -241,11 +240,11 @@ if __name__ == "__main__":
 
     try:
         with open('pathlight.pickle', 'rb') as datafile:
-            path_light_is_on = pickle.load(datafile)
-            print(f"loaded pathlight state={path_light_is_on}")
+            path_light_state = pickle.load(datafile)
+            print(f"loaded pathlight state={path_light_state['path_light_is_on']}")
     except (FileNotFoundError, pickle.UnpicklingError):
         print("failed to load pathlight state, default=OFF")
-        path_light_is_on = False
+        path_light_state['path_light_is_on'] = False
         pass
 
     client = mqtt.Client()
@@ -264,7 +263,7 @@ if __name__ == "__main__":
 
     pattern_delay = 0
 
-    if path_light_is_on:
+    if path_light_state['path_light_is_on']:
         lights_on()
     else:
         lights_off()
@@ -275,13 +274,13 @@ if __name__ == "__main__":
         time.sleep(0.001)
         current_seconds_count = time.monotonic()
 
-        if path_light_is_on and (current_seconds_count - last_time_pattern_update > pattern_delay):
+        if path_light_state['path_light_is_on'] and (current_seconds_count - last_time_pattern_update > pattern_delay):
             pattern_delay = lights_on(change_state=False)
             last_time_pattern_update = time.monotonic()
 
         if current_seconds_count - last_time_status_check_in > status_checkin_delay:
             last_time_status_check_in = current_seconds_count
-            if path_light_is_on:
+            if path_light_state['path_light_is_on']:
                 client.publish(MQTT_GETON_PATH, ON_VALUE)
             else:
                 client.publish(MQTT_GETON_PATH, OFF_VALUE)
