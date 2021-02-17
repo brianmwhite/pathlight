@@ -33,7 +33,7 @@ MQTT_GETON_PATH = "home/outside/switches/pathlight/getOn"
 ON_VALUE = "ON"
 OFF_VALUE = "OFF"
 
-PICKLE_FILE_LOCATION = "/home/pi/pathlight.pickle"
+PICKLE_FILE_LOCATION = "/home/pi/pathlight/pathlight.pickle"
 
 PIXEL_DATA_PIN = board.D18
 
