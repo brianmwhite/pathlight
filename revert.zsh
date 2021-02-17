@@ -1,8 +1,8 @@
 #!/bin/zsh
-sudo systemctl stop pathlight
-sudo rm pathlight.pickle
+systemctl stop pathlight
+rm pathlight.pickle
 
 git reset --hard master@{1}
 
-sudo systemctl start pathlight
+systemctl start pathlight
 journalctl -u pathlight -f
