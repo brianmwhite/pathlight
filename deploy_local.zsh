@@ -1,7 +1,5 @@
 #!/bin/zsh
 
-#revert? git reset --hard master@{1}
-
 git fetch
 
 if [ $(git rev-parse HEAD) != $(git rev-parse @{u}) ]; then
