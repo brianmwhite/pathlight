@@ -8,8 +8,6 @@ import board
 import neopixel
 import pickle
 
-# systemd commands
-
 # sudo systemctl start pathlight
 # sudo systemctl stop pathlight
 # sudo systemctl restart pathlight
