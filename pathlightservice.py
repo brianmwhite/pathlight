@@ -203,7 +203,7 @@ def lights_on(change_state=True):
         pixels.show()
         light_pattern_delay = random.uniform(0, 2)
     elif light_pattern == "stpatricks":
-        green = (255, 0, 0, 0)
+        green = (0, 255, 0, 0)
         white = (255, 255, 255, 0)
 
         color_options = (green, white)
