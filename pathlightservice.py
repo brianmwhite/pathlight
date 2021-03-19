@@ -125,7 +125,7 @@ def get_pattern_by_date(date_to_check):
         "01/01": "newyears",
         "01/02": "newyears",
         "02/14": "valentines",
-        "03/17": "stpatricks"
+        "03/17": "stpatricks",
         "07/04": "julyfourth"
     }
     return pattern_dates.get(date_key, "default")
