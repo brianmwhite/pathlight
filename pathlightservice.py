@@ -8,6 +8,8 @@ import board
 import neopixel
 import pickle
 
+# sudo ./deploy_local.sh
+
 # sudo systemctl start pathlight
 # sudo systemctl stop pathlight
 # sudo systemctl restart pathlight
