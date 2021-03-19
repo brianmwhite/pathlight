@@ -1,15 +1,37 @@
 #!/usr/bin/bash
 
+SERVICENAME="pathlight"
+DELETEPICKLE=false
+
 git fetch
 
 if [ $(git rev-parse HEAD) != $(git rev-parse @{u}) ]; then
-	systemctl stop pathlight
-	rm pathlight.pickle
 
+    while true; do
+        read -p "Delete saved[pickle] data? [yN] " yn
+        case $yn in
+            [Yy]* ) DELETEPICKLE=true; break;;
+            [Nn]* ) DELETEPICKLE=false; break;;
+            * ) DELETEPICKLE=false; break;;
+        esac
+    done
+
+    echo "stopping $SERVICENAME service"
+    systemctl stop $SERVICENAME
+
+    if [ "$DELETEPICKLE" = true ] ; then
+        echo "deleting $SERVICENAME.pickle file"
+        rm $SERVICENAME.pickle
+    fi
+
+    echo "updating code from repo"
     git pull
 
-    systemctl start pathlight
-	journalctl -u pathlight -f
+    echo "starting $SERVICENAME service"
+    systemctl start $SERVICENAME
+
+    echo "viewing logs for $SERVICENAME service"
+	journalctl -u $SERVICENAME -f
 else
-    echo "pathlight already up-to-date"
+    echo "$SERVICENAME already up-to-date"
 fi
