@@ -1,53 +1,64 @@
-import os
+import configparser
+import pickle
+import random
 import signal
 import time
 from datetime import date
-import random
-import paho.mqtt.client as mqtt
+
 import board
 import neopixel
-import pickle
+import paho.mqtt.client as mqtt
 
-# sudo ./deploy_local.sh
+# ./deploy_local.sh
+# ./svcmenu.py
 
-# sudo systemctl start pathlight
-# sudo systemctl stop pathlight
-# sudo systemctl restart pathlight
+# sudo systemctl start beltlight
+# sudo systemctl stop beltlight
+# sudo systemctl restart beltlight
 
-# systemctl status pathlight
-# journalctl -u pathlight -f
+# systemctl status beltlight
+# journalctl -u beltlight -f
 
-# sudo systemctl disable pathlight
-# sudo cp pathlight.service /etc/systemd/system/
-# sudo systemctl enable pathlight
+# sudo systemctl disable beltlight
+# sudo cp beltlight.service /etc/systemd/system/
+# sudo systemctl enable beltlight
 
-last_time_status_check_in = 0
-status_checkin_delay = 60.0
+# git commands to ignore changes specific file
+# git update-index config.ini
+# git update-index --skip-worktree config.ini
+# git update-index --no-skip-worktree config.ini
+# git ls-files -v|grep '^S'
 
-MQTT_HOST = "pihome.local"
-MQTT_PORT = 1883
+config = configparser.ConfigParser()
+config.read('/home/pi/pathlight/config.ini')
 
-MQTT_SETON_PATH = "home/outside/switches/pathlight/setOn"
-MQTT_GETON_PATH = "home/outside/switches/pathlight/getOn"
+config_settings = config['SETTINGS']
 
-ON_VALUE = "ON"
-OFF_VALUE = "OFF"
+MQTT_HOST = config_settings.get('MQTT_HOST')
+MQTT_PORT = config_settings.getint('MQTT_PORT')
 
-PICKLE_FILE_LOCATION = "/home/pi/pathlight/pathlight.pickle"
+MQTT_SETON_PATH = config_settings.get("MQTT_SETON_PATH")
+MQTT_GETON_PATH = config_settings.get("MQTT_GETON_PATH")
 
+ON_VALUE = config_settings.get("ON_VALUE")
+OFF_VALUE = config_settings.get("OFF_VALUE")
+
+PICKLE_FILE_LOCATION = config_settings.get("PICKLE_FILE_LOCATION")
+DEVICE_STATE = {'light_is_on': False, 'light_color': (0, 0, 0, 255)}
+
+status_checkin_delay = config_settings.getfloat("status_checkin_delay")
+last_time_status_check_in = 0.0
+
+# neopixel setup
 PIXEL_DATA_PIN = board.D18
-
 NUMBER_OF_TOTAL_LINKED_PIXELS = 84
+PIXELS_PER_UNIT = 12
 
 ORDER = neopixel.GRBW
 
 pixels = neopixel.NeoPixel(
     PIXEL_DATA_PIN, NUMBER_OF_TOTAL_LINKED_PIXELS, brightness=1.0, auto_write=False, pixel_order=ORDER
 )
-
-PIXELS_PER_RING = 12
-
-path_light_state = {'path_light_is_on': False, 'path_light_color': (0, 0, 0, 255)}
 
 
 class exit_monitor_setup:
@@ -71,6 +82,7 @@ def on_connect(client, userdata, flags, rc):
     client.subscribe(MQTT_SETON_PATH)
 
 
+# The callback for when a DISCONNECT message is received from the server.
 def on_disconnect(client, userdata, rc):
     print("MQTT: disconnecting reason " + str(rc))
 
@@ -83,10 +95,10 @@ def on_message(client, userdata, message):
         last_time_status_check_in = time.monotonic()
 
         if str(message.payload.decode("utf-8")) == ON_VALUE:
-            lights_on()
+            turn_on_lights()
             client.publish(MQTT_GETON_PATH, ON_VALUE)
         elif str(message.payload.decode("utf-8")) == OFF_VALUE:
-            lights_off()
+            turn_off_lights()
             client.publish(MQTT_GETON_PATH, OFF_VALUE)
 
 
@@ -133,18 +145,36 @@ def get_pattern_by_date(date_to_check):
     return pattern_dates.get(date_key, "default")
 
 
-def lights_on(change_state=True):
-    global path_light_state
-    path_light_state['path_light_is_on'] = True
+def turn_off_lights(change_state=True):
+    global DEVICE_STATE
+    DEVICE_STATE['light_is_on'] = False
+
+    if change_state:
+        print("turning lights OFF ....")
+        try:
+            with open(PICKLE_FILE_LOCATION, 'wb') as datafile:
+                pickle.dump(DEVICE_STATE, datafile)
+                print(
+                    f"saved light state={DEVICE_STATE['light_is_on']}")
+        except:
+            pass
+    
+    pixels.fill((0, 0, 0, 0))
+    pixels.show()
+
+
+def turn_on_lights(change_state=True):
+    global DEVICE_STATE
+    DEVICE_STATE['light_is_on'] = True
     light_pattern_delay = 60
 
     if change_state:
         print("turning lights ON ....")
         try:
             with open(PICKLE_FILE_LOCATION, 'wb') as datafile:
-                pickle.dump(path_light_state, datafile)
+                pickle.dump(DEVICE_STATE, datafile)
                 print(
-                    f"saved pathlight state={path_light_state['path_light_is_on']}")
+                    f"saved light state={DEVICE_STATE['light_is_on']}")
         except:
             pass
 
@@ -158,13 +188,13 @@ def lights_on(change_state=True):
         GREEN = (0, 255, 0, 0)
         color_options = (RED, GREEN)
 
-        pixels[0:11] = [random.choice(color_options)] * PIXELS_PER_RING
-        pixels[12:23] = [random.choice(color_options)] * PIXELS_PER_RING
-        pixels[24:35] = [random.choice(color_options)] * PIXELS_PER_RING
-        pixels[36:47] = [random.choice(color_options)] * PIXELS_PER_RING
-        pixels[48:59] = [random.choice(color_options)] * PIXELS_PER_RING
-        pixels[60:71] = [random.choice(color_options)] * PIXELS_PER_RING
-        pixels[72:83] = [random.choice(color_options)] * PIXELS_PER_RING
+        pixels[0:11] = [random.choice(color_options)] * PIXELS_PER_UNIT
+        pixels[12:23] = [random.choice(color_options)] * PIXELS_PER_UNIT
+        pixels[24:35] = [random.choice(color_options)] * PIXELS_PER_UNIT
+        pixels[36:47] = [random.choice(color_options)] * PIXELS_PER_UNIT
+        pixels[48:59] = [random.choice(color_options)] * PIXELS_PER_UNIT
+        pixels[60:71] = [random.choice(color_options)] * PIXELS_PER_UNIT
+        pixels[72:83] = [random.choice(color_options)] * PIXELS_PER_UNIT
 
         pixels.show()
         light_pattern_delay = random.uniform(0, 2)
@@ -178,13 +208,13 @@ def lights_on(change_state=True):
 
         color_options = (blue, cyan, azure, midnight, royal_blue, medium_blue)
 
-        pixels[0:11] = [random.choice(color_options)] * PIXELS_PER_RING
-        pixels[12:23] = [random.choice(color_options)] * PIXELS_PER_RING
-        pixels[24:35] = [random.choice(color_options)] * PIXELS_PER_RING
-        pixels[36:47] = [random.choice(color_options)] * PIXELS_PER_RING
-        pixels[48:59] = [random.choice(color_options)] * PIXELS_PER_RING
-        pixels[60:71] = [random.choice(color_options)] * PIXELS_PER_RING
-        pixels[72:83] = [random.choice(color_options)] * PIXELS_PER_RING
+        pixels[0:11] = [random.choice(color_options)] * PIXELS_PER_UNIT
+        pixels[12:23] = [random.choice(color_options)] * PIXELS_PER_UNIT
+        pixels[24:35] = [random.choice(color_options)] * PIXELS_PER_UNIT
+        pixels[36:47] = [random.choice(color_options)] * PIXELS_PER_UNIT
+        pixels[48:59] = [random.choice(color_options)] * PIXELS_PER_UNIT
+        pixels[60:71] = [random.choice(color_options)] * PIXELS_PER_UNIT
+        pixels[72:83] = [random.choice(color_options)] * PIXELS_PER_UNIT
 
         pixels.show()
         light_pattern_delay = random.uniform(0, 2)
@@ -195,13 +225,13 @@ def lights_on(change_state=True):
 
         color_options = (red, white, pink)
 
-        pixels[0:11] = [random.choice(color_options)] * PIXELS_PER_RING
-        pixels[12:23] = [random.choice(color_options)] * PIXELS_PER_RING
-        pixels[24:35] = [random.choice(color_options)] * PIXELS_PER_RING
-        pixels[36:47] = [random.choice(color_options)] * PIXELS_PER_RING
-        pixels[48:59] = [random.choice(color_options)] * PIXELS_PER_RING
-        pixels[60:71] = [random.choice(color_options)] * PIXELS_PER_RING
-        pixels[72:83] = [random.choice(color_options)] * PIXELS_PER_RING
+        pixels[0:11] = [random.choice(color_options)] * PIXELS_PER_UNIT
+        pixels[12:23] = [random.choice(color_options)] * PIXELS_PER_UNIT
+        pixels[24:35] = [random.choice(color_options)] * PIXELS_PER_UNIT
+        pixels[36:47] = [random.choice(color_options)] * PIXELS_PER_UNIT
+        pixels[48:59] = [random.choice(color_options)] * PIXELS_PER_UNIT
+        pixels[60:71] = [random.choice(color_options)] * PIXELS_PER_UNIT
+        pixels[72:83] = [random.choice(color_options)] * PIXELS_PER_UNIT
 
         pixels.show()
         light_pattern_delay = random.uniform(0, 2)
@@ -211,13 +241,13 @@ def lights_on(change_state=True):
 
         color_options = (green, white)
 
-        pixels[0:11] = [random.choice(color_options)] * PIXELS_PER_RING
-        pixels[12:23] = [random.choice(color_options)] * PIXELS_PER_RING
-        pixels[24:35] = [random.choice(color_options)] * PIXELS_PER_RING
-        pixels[36:47] = [random.choice(color_options)] * PIXELS_PER_RING
-        pixels[48:59] = [random.choice(color_options)] * PIXELS_PER_RING
-        pixels[60:71] = [random.choice(color_options)] * PIXELS_PER_RING
-        pixels[72:83] = [random.choice(color_options)] * PIXELS_PER_RING
+        pixels[0:11] = [random.choice(color_options)] * PIXELS_PER_UNIT
+        pixels[12:23] = [random.choice(color_options)] * PIXELS_PER_UNIT
+        pixels[24:35] = [random.choice(color_options)] * PIXELS_PER_UNIT
+        pixels[36:47] = [random.choice(color_options)] * PIXELS_PER_UNIT
+        pixels[48:59] = [random.choice(color_options)] * PIXELS_PER_UNIT
+        pixels[60:71] = [random.choice(color_options)] * PIXELS_PER_UNIT
+        pixels[72:83] = [random.choice(color_options)] * PIXELS_PER_UNIT
 
         pixels.show()
         light_pattern_delay = random.uniform(0, 2)
@@ -228,49 +258,31 @@ def lights_on(change_state=True):
 
         color_options = (red, white, blue)
 
-        pixels[0:11] = [random.choice(color_options)] * PIXELS_PER_RING
-        pixels[12:23] = [random.choice(color_options)] * PIXELS_PER_RING
-        pixels[24:35] = [random.choice(color_options)] * PIXELS_PER_RING
-        pixels[36:47] = [random.choice(color_options)] * PIXELS_PER_RING
-        pixels[48:59] = [random.choice(color_options)] * PIXELS_PER_RING
-        pixels[60:71] = [random.choice(color_options)] * PIXELS_PER_RING
-        pixels[72:83] = [random.choice(color_options)] * PIXELS_PER_RING
+        pixels[0:11] = [random.choice(color_options)] * PIXELS_PER_UNIT
+        pixels[12:23] = [random.choice(color_options)] * PIXELS_PER_UNIT
+        pixels[24:35] = [random.choice(color_options)] * PIXELS_PER_UNIT
+        pixels[36:47] = [random.choice(color_options)] * PIXELS_PER_UNIT
+        pixels[48:59] = [random.choice(color_options)] * PIXELS_PER_UNIT
+        pixels[60:71] = [random.choice(color_options)] * PIXELS_PER_UNIT
+        pixels[72:83] = [random.choice(color_options)] * PIXELS_PER_UNIT
 
         pixels.show()
         light_pattern_delay = random.uniform(0, 2)
     return light_pattern_delay
 
 
-def lights_off(change_state=True):
-    global path_light_state
-    path_light_state['path_light_is_on'] = False
-    if change_state:
-        print("turning lights OFF ....")
-        try:
-            with open(PICKLE_FILE_LOCATION, 'wb') as datafile:
-                pickle.dump(path_light_state, datafile)
-                print(
-                    f"saved pathlight state={path_light_state['path_light_is_on']}")
-        except:
-            pass
-
-    pixels.fill((0, 0, 0, 0))
-    pixels.show()
-
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     exit_monitor = exit_monitor_setup()
-
+    
     try:
         with open(PICKLE_FILE_LOCATION, 'rb') as datafile:
-            path_light_state = pickle.load(datafile)
-            print(
-                f"loaded pathlight state={path_light_state['path_light_is_on']}")
+            DEVICE_STATE = pickle.load(datafile)
+            print(f"loaded light state={DEVICE_STATE['light_is_on']}")
     except (FileNotFoundError, pickle.UnpicklingError):
-        print("failed to load pathlight state, default=OFF")
-        path_light_state['path_light_is_on'] = False
+        print("failed to load light state, default=OFF")
+        DEVICE_STATE['light_is_on'] = False
         pass
-
+	
     client = mqtt.Client()
     client.on_connect = on_connect
     client.on_disconnect = on_disconnect
@@ -281,16 +293,16 @@ if __name__ == "__main__":
     # see below, not sure if sleep is needed here, probably not
     time.sleep(0.001)
 
-    print("started path light service...")
+    print("started light service...")
     last_time_status_check_in = time.monotonic()
     last_time_pattern_update = time.monotonic()
 
     pattern_delay = 0
 
-    if path_light_state['path_light_is_on']:
-        lights_on()
+    if DEVICE_STATE['light_is_on']:
+        turn_on_lights()
     else:
-        lights_off()
+        turn_off_lights()
 
     while not exit_monitor.exit_now_flag_raised:
         # added time.sleep 1 ms after seeing 100% CPU usage
@@ -298,13 +310,14 @@ if __name__ == "__main__":
         time.sleep(0.001)
         current_seconds_count = time.monotonic()
 
-        if path_light_state['path_light_is_on'] and (current_seconds_count - last_time_pattern_update > pattern_delay):
-            pattern_delay = lights_on(change_state=False)
+        if DEVICE_STATE['light_is_on'] and (current_seconds_count - last_time_pattern_update > pattern_delay):
+            pattern_delay = turn_on_lights(change_state=False)
             last_time_pattern_update = time.monotonic()
 
         if current_seconds_count - last_time_status_check_in > status_checkin_delay:
             last_time_status_check_in = current_seconds_count
-            if path_light_state['path_light_is_on']:
+
+            if DEVICE_STATE['light_is_on']:
                 client.publish(MQTT_GETON_PATH, ON_VALUE)
             else:
                 client.publish(MQTT_GETON_PATH, OFF_VALUE)
@@ -312,4 +325,4 @@ if __name__ == "__main__":
     client.loop_stop()
     client.disconnect()
     pixels.deinit()
-    print("pathlight service ended")
+    print("light service ended")
