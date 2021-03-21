@@ -17,7 +17,7 @@ if [ $(git rev-parse HEAD) != $(git rev-parse @{u}) ]; then
     done
 
     echo "stopping $SERVICENAME service"
-    systemctl stop $SERVICENAME
+    sudo systemctl stop $SERVICENAME
 
     if [ "$DELETEPICKLE" = true ] ; then
         echo "deleting $SERVICENAME.pickle file"
@@ -28,7 +28,7 @@ if [ $(git rev-parse HEAD) != $(git rev-parse @{u}) ]; then
     git pull
 
     echo "starting $SERVICENAME service"
-    systemctl start $SERVICENAME
+    sudo systemctl start $SERVICENAME
 
     echo "viewing logs for $SERVICENAME service"
 	journalctl -u $SERVICENAME -f
