@@ -140,7 +140,7 @@ def get_pattern_by_date(date_to_check):
         "01/02": "newyears",
         "02/14": "valentines",
         "03/17": "stpatricks",
-        "07/04": "julyfourth"
+        "07/04": "patriotic"
     }
     return pattern_dates.get(date_key, "default")
 
@@ -251,7 +251,7 @@ def turn_on_lights(change_state=True):
 
         pixels.show()
         light_pattern_delay = random.uniform(0, 2)
-    elif light_pattern == "julyfourth":
+    elif light_pattern == "patriotic":
         red = (255, 0, 0, 0)
         white = (255, 255, 255, 0)
         blue = (0, 0, 255, 0)
