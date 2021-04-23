@@ -40,11 +40,14 @@ MQTT_PORT = config_settings.getint('MQTT_PORT')
 MQTT_SETON_PATH = config_settings.get("MQTT_SETON_PATH")
 MQTT_GETON_PATH = config_settings.get("MQTT_GETON_PATH")
 
+MQTT_SETRGBW_PATH = config_settings.get("MQTT_SETRGBW_PATH")
+MQTT_GETRGBW_PATH = config_settings.get("MQTT_GETRGBW_PATH")
+
 ON_VALUE = config_settings.get("ON_VALUE")
 OFF_VALUE = config_settings.get("OFF_VALUE")
 
 PICKLE_FILE_LOCATION = config_settings.get("PICKLE_FILE_LOCATION")
-DEVICE_STATE = {'light_is_on': False, 'light_color': (0, 0, 0, 255)}
+DEVICE_STATE = {'light_is_on': False, 'light_color': '000000FF'}
 
 status_checkin_delay = config_settings.getfloat("status_checkin_delay")
 last_time_status_check_in = 0.0
@@ -80,6 +83,7 @@ def on_connect(client, userdata, flags, rc):
     # reconnect then subscriptions will be renewed.
     client.subscribe("$SYS/#")
     client.subscribe(MQTT_SETON_PATH)
+    client.subscribe(MQTT_SETRGBW_PATH)
 
 
 # The callback for when a DISCONNECT message is received from the server.
@@ -100,6 +104,10 @@ def on_message(client, userdata, message):
         elif str(message.payload.decode("utf-8")) == OFF_VALUE:
             turn_off_lights()
             client.publish(MQTT_GETON_PATH, OFF_VALUE)
+    elif message.topic == MQTT_SETRGBW_PATH:
+        TARGET_COLOR_AS_HEX = str(message.payload.decode("utf-8"))
+        set_light_color(TARGET_COLOR_AS_HEX)
+        client.publish(MQTT_GETRGBW_PATH, TARGET_COLOR_AS_HEX)
 
 
 def get_pattern_by_date(date_to_check):
@@ -145,6 +153,16 @@ def get_pattern_by_date(date_to_check):
     return pattern_dates.get(date_key, "default")
 
 
+def set_light_color(target_color_as_hex):
+    global DEVICE_STATE
+    DEVICE_STATE['light_color'] = target_color_as_hex
+
+    if (target_color_as_hex = "00000000"):
+        turn_off_lights()
+    else
+        turn_on_lights()
+
+
 def turn_off_lights(change_state=True):
     global DEVICE_STATE
     DEVICE_STATE['light_is_on'] = False
@@ -181,7 +199,7 @@ def turn_on_lights(change_state=True):
     light_pattern = get_pattern_by_date(date.today())
 
     if light_pattern == "default":
-        pixels.fill((0, 0, 0, 255))
+        pixels.fill(tuple(bytes.fromhex(DEVICE_STATE['light_color'])))
         pixels.show()
     elif light_pattern == "christmas":
         RED = (255, 0, 0, 0)
@@ -321,6 +339,8 @@ if __name__ == '__main__':
                 client.publish(MQTT_GETON_PATH, ON_VALUE)
             else:
                 client.publish(MQTT_GETON_PATH, OFF_VALUE)
+            
+            client.publish(MQTT_GETRGBW_PATH, DEVICE_STATE['light_color'])
 
     client.loop_stop()
     client.disconnect()
