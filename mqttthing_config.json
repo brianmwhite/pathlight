@@ -3,12 +3,16 @@
     "name": "Sidewalk Lights",
     "topics": {
         "getOn": "home/outside/switches/pathlight/getOn",
-        "setOn": "home/outside/switches/pathlight/setOn"
+        "setOn": "home/outside/switches/pathlight/setOn",
+        "setRGBW": "home/outside/switches/pathlight/setRGBW",
+        "getRGBW": "home/outside/switches/pathlight/getRGBW"
     },
     "confirmationPeriodms": 1000,
     "confirmationIndicateOffline": true,
     "integerValue": false,
     "onValue": "ON",
     "offValue": "OFF",
-    "accessory": "mqttthing"
+    "accessory": "mqttthing",
+    "hex": true,
+    "hexPrefix": ""
 }
