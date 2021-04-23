@@ -159,7 +159,7 @@ def set_light_color(target_color_as_hex):
 
     if (target_color_as_hex == "00000000"):
         turn_off_lights()
-    else
+    else:
         turn_on_lights()
 
 
