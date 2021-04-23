@@ -158,6 +158,10 @@ def set_light_color(target_color_as_hex):
     client.publish(MQTT_GETRGBW_PATH, target_color_as_hex)
     print(f"color={target_color_as_hex}")
 
+    if DEVICE_STATE['light_is_on'] == True:
+        pixels.fill(tuple(bytes.fromhex(DEVICE_STATE['light_color'])))
+        pixels.show()
+
 
 def turn_off_lights(change_state=True):
     global DEVICE_STATE
