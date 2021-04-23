@@ -157,7 +157,7 @@ def set_light_color(target_color_as_hex):
     global DEVICE_STATE
     DEVICE_STATE['light_color'] = target_color_as_hex
 
-    if (target_color_as_hex = "00000000"):
+    if (target_color_as_hex == "00000000"):
         turn_off_lights()
     else
         turn_on_lights()
