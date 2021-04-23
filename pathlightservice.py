@@ -107,7 +107,6 @@ def on_message(client, userdata, message):
     elif message.topic == MQTT_SETRGBW_PATH:
         TARGET_COLOR_AS_HEX = str(message.payload.decode("utf-8"))
         set_light_color(TARGET_COLOR_AS_HEX)
-        client.publish(MQTT_GETRGBW_PATH, TARGET_COLOR_AS_HEX)
 
 
 def get_pattern_by_date(date_to_check):
@@ -156,11 +155,8 @@ def get_pattern_by_date(date_to_check):
 def set_light_color(target_color_as_hex):
     global DEVICE_STATE
     DEVICE_STATE['light_color'] = target_color_as_hex
-    print(f"color={DEVICE_STATE['light_color']}")
-    # if (target_color_as_hex == "00000000"):
-    #     turn_off_lights()
-    # else:
-    #     turn_on_lights()
+    client.publish(MQTT_GETRGBW_PATH, target_color_as_hex)
+    print(f"color={target_color_as_hex}")
 
 
 def turn_off_lights(change_state=True):
@@ -169,7 +165,7 @@ def turn_off_lights(change_state=True):
 
     if change_state:
         print("turning lights OFF ....")
-        DEVICE_STATE['light_color'] = "000000FF"
+        set_light_color("000000FF")
         try:
             with open(PICKLE_FILE_LOCATION, 'wb') as datafile:
                 pickle.dump(DEVICE_STATE, datafile)
