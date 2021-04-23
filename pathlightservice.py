@@ -188,6 +188,8 @@ def turn_on_lights(change_state=True):
 
     if change_state:
         print("turning lights ON ....")
+        print(f"color={DEVICE_STATE['light_color']}")
+
         try:
             with open(PICKLE_FILE_LOCATION, 'wb') as datafile:
                 pickle.dump(DEVICE_STATE, datafile)
