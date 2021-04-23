@@ -156,7 +156,7 @@ def get_pattern_by_date(date_to_check):
 def set_light_color(target_color_as_hex):
     global DEVICE_STATE
     DEVICE_STATE['light_color'] = target_color_as_hex
-
+    print(f"color={DEVICE_STATE['light_color']}")
     if (target_color_as_hex == "00000000"):
         turn_off_lights()
     else:
