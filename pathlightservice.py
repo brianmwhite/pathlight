@@ -47,9 +47,11 @@ ON_VALUE = config_settings.get("ON_VALUE")
 OFF_VALUE = config_settings.get("OFF_VALUE")
 
 PICKLE_FILE_LOCATION = config_settings.get("PICKLE_FILE_LOCATION")
-DEVICE_STATE = {'light_is_on': False, 'light_color': '000000FF'}
 
-status_checkin_delay = config_settings.getfloat("status_checkin_delay")
+DEFAULT_COLOR = config_settings.get("DEFAULT_COLOR")
+DEVICE_STATE = {'light_is_on': False, 'light_color': DEFAULT_COLOR}
+
+STATUS_CHECKIN_DELAY = config_settings.getfloat("STATUS_CHECKIN_DELAY")
 last_time_status_check_in = 0.0
 
 # neopixel setup
@@ -77,7 +79,7 @@ class exit_monitor_setup:
 
 # The callback for when the client receives a CONNACK response from the server.
 def on_connect(client, userdata, flags, rc):
-    print("MQTT: Connected with result code "+str(rc))
+    print("MQTT: Connected with result code " + str(rc))
 
     # Subscribing in on_connect() means that if we lose the connection and
     # reconnect then subscriptions will be renewed.
@@ -169,7 +171,7 @@ def turn_off_lights(change_state=True):
 
     if change_state:
         print("turning lights OFF ....")
-        set_light_color("000000FF")
+        set_light_color(DEFAULT_COLOR)
         try:
             with open(PICKLE_FILE_LOCATION, 'wb') as datafile:
                 pickle.dump(DEVICE_STATE, datafile)
@@ -180,6 +182,21 @@ def turn_off_lights(change_state=True):
     
     pixels.fill((0, 0, 0, 0))
     pixels.show()
+
+
+def execute_light_pattern(color_options_collection):
+    pixels[0:11] = [random.choice(color_options_collection)] * PIXELS_PER_UNIT
+    pixels[12:23] = [random.choice(color_options_collection)] * PIXELS_PER_UNIT
+    pixels[24:35] = [random.choice(color_options_collection)] * PIXELS_PER_UNIT
+    pixels[36:47] = [random.choice(color_options_collection)] * PIXELS_PER_UNIT
+    pixels[48:59] = [random.choice(color_options_collection)] * PIXELS_PER_UNIT
+    pixels[60:71] = [random.choice(color_options_collection)] * PIXELS_PER_UNIT
+    pixels[72:83] = [random.choice(color_options_collection)] * PIXELS_PER_UNIT
+
+    pixels.show()
+    light_pattern_next_delay = random.uniform(0, 2)
+    
+    return light_pattern_next_delay
 
 
 def turn_on_lights(change_state=True):
@@ -205,20 +222,10 @@ def turn_on_lights(change_state=True):
         pixels.fill(tuple(bytes.fromhex(DEVICE_STATE['light_color'])))
         pixels.show()
     elif light_pattern == "christmas":
-        RED = (255, 0, 0, 0)
-        GREEN = (0, 255, 0, 0)
-        color_options = (RED, GREEN)
-
-        pixels[0:11] = [random.choice(color_options)] * PIXELS_PER_UNIT
-        pixels[12:23] = [random.choice(color_options)] * PIXELS_PER_UNIT
-        pixels[24:35] = [random.choice(color_options)] * PIXELS_PER_UNIT
-        pixels[36:47] = [random.choice(color_options)] * PIXELS_PER_UNIT
-        pixels[48:59] = [random.choice(color_options)] * PIXELS_PER_UNIT
-        pixels[60:71] = [random.choice(color_options)] * PIXELS_PER_UNIT
-        pixels[72:83] = [random.choice(color_options)] * PIXELS_PER_UNIT
-
-        pixels.show()
-        light_pattern_delay = random.uniform(0, 2)
+        red = (255, 0, 0, 0)
+        green = (0, 255, 0, 0)
+        
+        light_pattern_delay = execute_light_pattern((red, green))
     elif light_pattern == "newyears":
         blue = (0, 0, 255)
         cyan = (0, 255, 255)
@@ -227,68 +234,24 @@ def turn_on_lights(change_state=True):
         royal_blue = (45, 90, 255)
         medium_blue = (0, 0, 155)
 
-        color_options = (blue, cyan, azure, midnight, royal_blue, medium_blue)
-
-        pixels[0:11] = [random.choice(color_options)] * PIXELS_PER_UNIT
-        pixels[12:23] = [random.choice(color_options)] * PIXELS_PER_UNIT
-        pixels[24:35] = [random.choice(color_options)] * PIXELS_PER_UNIT
-        pixels[36:47] = [random.choice(color_options)] * PIXELS_PER_UNIT
-        pixels[48:59] = [random.choice(color_options)] * PIXELS_PER_UNIT
-        pixels[60:71] = [random.choice(color_options)] * PIXELS_PER_UNIT
-        pixels[72:83] = [random.choice(color_options)] * PIXELS_PER_UNIT
-
-        pixels.show()
-        light_pattern_delay = random.uniform(0, 2)
+        light_pattern_delay = execute_light_pattern((blue, cyan, azure, midnight, royal_blue, medium_blue))
     elif light_pattern == "valentines":
         red = (255, 0, 0, 0)
         white = (255, 255, 255, 0)
         pink = (255, 192, 203, 0)
 
-        color_options = (red, white, pink)
-
-        pixels[0:11] = [random.choice(color_options)] * PIXELS_PER_UNIT
-        pixels[12:23] = [random.choice(color_options)] * PIXELS_PER_UNIT
-        pixels[24:35] = [random.choice(color_options)] * PIXELS_PER_UNIT
-        pixels[36:47] = [random.choice(color_options)] * PIXELS_PER_UNIT
-        pixels[48:59] = [random.choice(color_options)] * PIXELS_PER_UNIT
-        pixels[60:71] = [random.choice(color_options)] * PIXELS_PER_UNIT
-        pixels[72:83] = [random.choice(color_options)] * PIXELS_PER_UNIT
-
-        pixels.show()
-        light_pattern_delay = random.uniform(0, 2)
+        light_pattern_delay = execute_light_pattern((red, white, pink))
     elif light_pattern == "stpatricks":
         green = (0, 255, 0, 0)
         white = (255, 255, 255, 0)
 
-        color_options = (green, white)
-
-        pixels[0:11] = [random.choice(color_options)] * PIXELS_PER_UNIT
-        pixels[12:23] = [random.choice(color_options)] * PIXELS_PER_UNIT
-        pixels[24:35] = [random.choice(color_options)] * PIXELS_PER_UNIT
-        pixels[36:47] = [random.choice(color_options)] * PIXELS_PER_UNIT
-        pixels[48:59] = [random.choice(color_options)] * PIXELS_PER_UNIT
-        pixels[60:71] = [random.choice(color_options)] * PIXELS_PER_UNIT
-        pixels[72:83] = [random.choice(color_options)] * PIXELS_PER_UNIT
-
-        pixels.show()
-        light_pattern_delay = random.uniform(0, 2)
+        light_pattern_delay = execute_light_pattern((green, white))
     elif light_pattern == "patriotic":
         red = (255, 0, 0, 0)
         white = (255, 255, 255, 0)
         blue = (0, 0, 255, 0)
 
-        color_options = (red, white, blue)
-
-        pixels[0:11] = [random.choice(color_options)] * PIXELS_PER_UNIT
-        pixels[12:23] = [random.choice(color_options)] * PIXELS_PER_UNIT
-        pixels[24:35] = [random.choice(color_options)] * PIXELS_PER_UNIT
-        pixels[36:47] = [random.choice(color_options)] * PIXELS_PER_UNIT
-        pixels[48:59] = [random.choice(color_options)] * PIXELS_PER_UNIT
-        pixels[60:71] = [random.choice(color_options)] * PIXELS_PER_UNIT
-        pixels[72:83] = [random.choice(color_options)] * PIXELS_PER_UNIT
-
-        pixels.show()
-        light_pattern_delay = random.uniform(0, 2)
+        light_pattern_delay = execute_light_pattern((red, white, blue))
     return light_pattern_delay
 
 
@@ -303,7 +266,7 @@ if __name__ == '__main__':
         print("failed to load light state, default=OFF")
         DEVICE_STATE['light_is_on'] = False
         pass
-	
+ 
     client = mqtt.Client()
     client.on_connect = on_connect
     client.on_disconnect = on_disconnect
@@ -335,7 +298,7 @@ if __name__ == '__main__':
             pattern_delay = turn_on_lights(change_state=False)
             last_time_pattern_update = time.monotonic()
 
-        if current_seconds_count - last_time_status_check_in > status_checkin_delay:
+        if current_seconds_count - last_time_status_check_in > STATUS_CHECKIN_DELAY:
             last_time_status_check_in = current_seconds_count
 
             if DEVICE_STATE['light_is_on']:
