@@ -29,6 +29,15 @@ import paho.mqtt.client as mqtt
 # git update-index --no-skip-worktree config.ini
 # git ls-files -v|grep '^S'
 
+# stop auto time sync: 
+# sudo systemctl stop systemd-timesyncd
+# change date/time:
+# sudo date --s="15 DEC 2020 12:49:00"
+# start auto time sync:
+# sudo systemctl start systemd-timesyncd
+# check the date:
+# date
+
 config = configparser.ConfigParser()
 config.read('/home/pi/pathlight/config.ini')
 
