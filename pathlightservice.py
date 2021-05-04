@@ -29,7 +29,7 @@ import paho.mqtt.client as mqtt
 # git update-index --no-skip-worktree config.ini
 # git ls-files -v|grep '^S'
 
-# stop auto time sync: 
+# stop auto time sync:
 # sudo systemctl stop systemd-timesyncd
 # change date/time:
 # sudo date --s="15 DEC 2020 12:49:00"
@@ -169,7 +169,7 @@ def set_light_color(target_color_as_hex):
     client.publish(MQTT_GETRGBW_PATH, target_color_as_hex)
     print(f"color={target_color_as_hex}")
 
-    if DEVICE_STATE['light_is_on'] == True:
+    if DEVICE_STATE['light_is_on'] is True:
         pixels.fill(tuple(bytes.fromhex(DEVICE_STATE['light_color'])))
         pixels.show()
 
@@ -186,9 +186,16 @@ def turn_off_lights(change_state=True):
                 pickle.dump(DEVICE_STATE, datafile)
                 print(
                     f"saved light state={DEVICE_STATE['light_is_on']}")
-        except:
+        except pickle.UnpicklingError as e:
+            print(e)
             pass
-    
+        except (AttributeError, EOFError, ImportError, IndexError) as e:
+            print(e)
+            pass
+        except Exception as e:
+            print(e)
+            pass
+
     pixels.fill((0, 0, 0, 0))
     pixels.show()
 
@@ -204,7 +211,7 @@ def execute_light_pattern(color_options_collection):
 
     pixels.show()
     light_pattern_next_delay = random.uniform(0, 2)
-    
+
     return light_pattern_next_delay
 
 
@@ -222,7 +229,14 @@ def turn_on_lights(change_state=True):
                 pickle.dump(DEVICE_STATE, datafile)
                 print(
                     f"saved light state={DEVICE_STATE['light_is_on']}")
-        except:
+        except pickle.UnpicklingError as e:
+            print(e)
+            pass
+        except (AttributeError, EOFError, ImportError, IndexError) as e:
+            print(e)
+            pass
+        except Exception as e:
+            print(e)
             pass
 
     light_pattern = get_pattern_by_date(date.today())
@@ -233,7 +247,7 @@ def turn_on_lights(change_state=True):
     elif light_pattern == "christmas":
         red = (255, 0, 0, 0)
         green = (0, 255, 0, 0)
-        
+
         light_pattern_delay = execute_light_pattern((red, green))
     elif light_pattern == "newyears":
         blue = (0, 0, 255)
@@ -266,7 +280,7 @@ def turn_on_lights(change_state=True):
 
 if __name__ == '__main__':
     exit_monitor = exit_monitor_setup()
-    
+
     try:
         with open(PICKLE_FILE_LOCATION, 'rb') as datafile:
             DEVICE_STATE = pickle.load(datafile)
@@ -275,7 +289,7 @@ if __name__ == '__main__':
         print("failed to load light state, default=OFF")
         DEVICE_STATE['light_is_on'] = False
         pass
- 
+
     client = mqtt.Client()
     client.on_connect = on_connect
     client.on_disconnect = on_disconnect
@@ -314,7 +328,7 @@ if __name__ == '__main__':
                 client.publish(MQTT_GETON_PATH, ON_VALUE)
             else:
                 client.publish(MQTT_GETON_PATH, OFF_VALUE)
-            
+
             client.publish(MQTT_GETRGBW_PATH, DEVICE_STATE['light_color'])
 
     client.loop_stop()
