@@ -5,10 +5,10 @@ DELETEPICKLE=false
 
 git fetch
 
-if [ $(git rev-parse HEAD) != $(git rev-parse @{u}) ]; then
+if [ "$(git rev-parse HEAD)" != "$(git rev-parse @\{u\})" ]; then
 
     while true; do
-        read -p "Delete saved[pickle] data? [yN] " yn
+        read -rp "Delete saved[pickle] data? [yN] " yn
         case $yn in
             [Yy]* ) DELETEPICKLE=true; break;;
             [Nn]* ) DELETEPICKLE=false; break;;
