@@ -6,7 +6,7 @@ DELETEPICKLE=false
 echo "reverting code to last version... "
 
 while true; do
-    read -p "Delete saved[pickle] data? [yN] " yn
+    read -rp "Delete saved[pickle] data? [yN] " yn
     case $yn in
         [Yy]* ) DELETEPICKLE=true; break;;
         [Nn]* ) DELETEPICKLE=false; break;;
@@ -23,7 +23,7 @@ if [ "$DELETEPICKLE" = true ] ; then
 fi
 
 echo "resetting code to prior version"
-git reset --hard master@{1}
+git reset --hard master@\{1\}
 
 echo "starting $SERVICENAME service"
 systemctl start $SERVICENAME

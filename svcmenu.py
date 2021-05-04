@@ -22,5 +22,5 @@ if __name__ == "__main__":
             os.system(f"sudo systemctl start {SERVICE_NAME}")
         elif menu_entry_index == 4:
             os.system(f"systemctl status {SERVICE_NAME}")
-        elif menu_entry_index == 5: 
+        elif menu_entry_index == 5:
             main_menu_exit = True
