@@ -1,5 +1,5 @@
 {
-    "type": "switch",
+    "type": "lightbulb",
     "name": "Sidewalk Lights",
     "topics": {
         "getOn": "home/outside/switches/pathlight/getOn",
