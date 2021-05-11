@@ -5,10 +5,13 @@
         "getOn": "home/outside/switches/pathlight/getOn",
         "setOn": "home/outside/switches/pathlight/setOn",
         "setRGBW": "home/outside/switches/pathlight/setRGBW",
-        "getRGBW": "home/outside/switches/pathlight/getRGBW"
+        "getRGBW": "home/outside/switches/pathlight/getRGBW",
+        "getOnline": "home/outside/switches/pathlight/getOnline"
     },
+    "onlineValue": "Online",
+    "offlineValue": "Offline",
     "confirmationPeriodms": 1000,
-    "confirmationIndicateOffline": true,
+    "confirmationIndicateOffline": false,
     "integerValue": false,
     "onValue": "ON",
     "offValue": "OFF",

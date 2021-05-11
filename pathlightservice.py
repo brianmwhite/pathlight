@@ -52,8 +52,12 @@ MQTT_GETON_PATH = config_settings.get("MQTT_GETON_PATH")
 MQTT_SETRGBW_PATH = config_settings.get("MQTT_SETRGBW_PATH")
 MQTT_GETRGBW_PATH = config_settings.get("MQTT_GETRGBW_PATH")
 
-ON_VALUE = config_settings.get("ON_VALUE")
-OFF_VALUE = config_settings.get("OFF_VALUE")
+MQTT_GETONLINE_PATH = config_settings.get("MQTT_GETONLINE_PATH")
+MQTT_ONLINEVALUE = config_settings.get("MQTT_ONLINEVALUE")
+MQTT_OFFLINEVALUE = config_settings.get("MQTT_OFFLINEVALUE")
+
+MQTT_ON_VALUE = config_settings.get("MQTT_ON_VALUE")
+MQTT_OFF_VALUE = config_settings.get("MQTT_OFF_VALUE")
 
 PICKLE_FILE_LOCATION = config_settings.get("PICKLE_FILE_LOCATION")
 
@@ -109,12 +113,12 @@ def on_message(client, userdata, message):
     if message.topic == MQTT_SETON_PATH:
         last_time_status_check_in = time.monotonic()
 
-        if str(message.payload.decode("utf-8")) == ON_VALUE:
+        if str(message.payload.decode("utf-8")) == MQTT_ON_VALUE:
             turn_on_lights()
-            client.publish(MQTT_GETON_PATH, ON_VALUE)
-        elif str(message.payload.decode("utf-8")) == OFF_VALUE:
+            client.publish(MQTT_GETON_PATH, MQTT_ON_VALUE)
+        elif str(message.payload.decode("utf-8")) == MQTT_OFF_VALUE:
             turn_off_lights()
-            client.publish(MQTT_GETON_PATH, OFF_VALUE)
+            client.publish(MQTT_GETON_PATH, MQTT_OFF_VALUE)
     elif message.topic == MQTT_SETRGBW_PATH:
         TARGET_COLOR_AS_HEX = str(message.payload.decode("utf-8"))
         set_light_color(TARGET_COLOR_AS_HEX)
@@ -324,12 +328,13 @@ if __name__ == '__main__':
         if current_seconds_count - last_time_status_check_in > STATUS_CHECKIN_DELAY:
             last_time_status_check_in = current_seconds_count
 
-            if DEVICE_STATE['light_is_on']:
-                client.publish(MQTT_GETON_PATH, ON_VALUE)
-            else:
-                client.publish(MQTT_GETON_PATH, OFF_VALUE)
+            client.publish(MQTT_GETONLINE_PATH, MQTT_ONLINEVALUE)
+            # if DEVICE_STATE['light_is_on']:
+            #     client.publish(MQTT_GETON_PATH, MQTT_ON_VALUE)
+            # else:
+            #     client.publish(MQTT_GETON_PATH, MQTT_OFF_VALUE)
 
-            client.publish(MQTT_GETRGBW_PATH, DEVICE_STATE['light_color'])
+            # client.publish(MQTT_GETRGBW_PATH, DEVICE_STATE['light_color'])
 
     client.loop_stop()
     client.disconnect()
