@@ -228,6 +228,9 @@ def turn_on_lights(change_state=True):
         print("turning lights ON ....")
         print(f"color={DEVICE_STATE['light_color']}")
 
+        pixels.fill(tuple(bytes.fromhex(DEVICE_STATE['light_color'])))
+        pixels.show()
+
         try:
             with open(PICKLE_FILE_LOCATION, 'wb') as datafile:
                 pickle.dump(DEVICE_STATE, datafile)
@@ -245,10 +248,7 @@ def turn_on_lights(change_state=True):
 
     light_pattern = get_pattern_by_date(date.today())
 
-    if light_pattern == "default":
-        pixels.fill(tuple(bytes.fromhex(DEVICE_STATE['light_color'])))
-        pixels.show()
-    elif light_pattern == "christmas":
+    if light_pattern == "christmas":
         red = (255, 0, 0, 0)
         green = (0, 255, 0, 0)
 
