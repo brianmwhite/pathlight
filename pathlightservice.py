@@ -184,7 +184,7 @@ def turn_off_lights(change_state=True):
 
     if change_state:
         print("turning lights OFF ....")
-        set_light_color(DEFAULT_COLOR)
+        # set_light_color(DEFAULT_COLOR)
         try:
             with open(PICKLE_FILE_LOCATION, 'wb') as datafile:
                 pickle.dump(DEVICE_STATE, datafile)
