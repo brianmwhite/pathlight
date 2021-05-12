@@ -145,7 +145,6 @@ def turn_off_lights(change_state=True):
 
     if change_state:
         print("turning lights OFF ....")
-        # set_light_color(DEFAULT_COLOR)
         try:
             with open(PICKLE_FILE_LOCATION, 'wb') as datafile:
                 pickle.dump(DEVICE_STATE, datafile)
@@ -275,12 +274,6 @@ if __name__ == '__main__':
             last_time_status_check_in = current_seconds_count
 
             client.publish(MQTT_GETONLINE_PATH, MQTT_ONLINEVALUE)
-            # if DEVICE_STATE['light_is_on']:
-            #     client.publish(MQTT_GETON_PATH, MQTT_ON_VALUE)
-            # else:
-            #     client.publish(MQTT_GETON_PATH, MQTT_OFF_VALUE)
-
-            # client.publish(MQTT_GETRGBW_PATH, DEVICE_STATE['light_color'])
 
     client.loop_stop()
     client.disconnect()
