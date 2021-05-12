@@ -9,6 +9,8 @@ import board
 import neopixel
 import paho.mqtt.client as mqtt
 
+import pathlightconfig
+
 # ./deploy_local.sh
 # ./svcmenu.py
 
@@ -42,6 +44,8 @@ config = configparser.ConfigParser()
 config.read('/home/pi/pathlight/config.ini')
 
 config_settings = config['SETTINGS']
+config_pattern_section = config['PATTERNS']
+color_pattern_by_date = pathlightconfig.get_color_pattern_config(config_pattern_section)
 
 MQTT_HOST = config_settings.get('MQTT_HOST')
 MQTT_PORT = config_settings.getint('MQTT_PORT')
@@ -124,49 +128,6 @@ def on_message(client, userdata, message):
         set_light_color(TARGET_COLOR_AS_HEX)
 
 
-def get_pattern_by_date(date_to_check):
-    date_key = date_to_check.strftime("%m/%d")
-    pattern_dates = {
-        "12/01": "christmas",
-        "12/02": "christmas",
-        "12/03": "christmas",
-        "12/04": "christmas",
-        "12/05": "christmas",
-        "12/06": "christmas",
-        "12/07": "christmas",
-        "12/08": "christmas",
-        "12/09": "christmas",
-        "12/10": "christmas",
-        "12/11": "christmas",
-        "12/12": "christmas",
-        "12/13": "christmas",
-        "12/14": "christmas",
-        "12/15": "christmas",
-        "12/16": "christmas",
-        "12/17": "christmas",
-        "12/18": "christmas",
-        "12/19": "christmas",
-        "12/20": "christmas",
-        "12/21": "christmas",
-        "12/22": "christmas",
-        "12/23": "christmas",
-        "12/24": "christmas",
-        "12/25": "christmas",
-        "12/26": "christmas",
-        "12/27": "newyears",
-        "12/28": "newyears",
-        "12/29": "newyears",
-        "12/30": "newyears",
-        "12/31": "newyears",
-        "01/01": "newyears",
-        "01/02": "newyears",
-        "02/14": "valentines",
-        "03/17": "stpatricks",
-        "07/04": "patriotic"
-    }
-    return pattern_dates.get(date_key, "default")
-
-
 def set_light_color(target_color_as_hex):
     global DEVICE_STATE
     DEVICE_STATE['light_color'] = target_color_as_hex
@@ -204,14 +165,27 @@ def turn_off_lights(change_state=True):
     pixels.show()
 
 
+def get_pattern_by_date(date_to_check):
+    date_key = date_to_check.strftime("%m/%d")
+    return color_pattern_by_date.get(date_key, [])
+
+
+def convert_hex_to_tuple(hex_string):
+    return tuple(bytes.fromhex(hex_string))
+
+
+def get_random_color_from_set(color_set):
+    hex_color = random.choice(color_set)
+    return convert_hex_to_tuple(hex_color)
+
+
 def execute_light_pattern(color_options_collection):
-    pixels[0:11] = [random.choice(color_options_collection)] * PIXELS_PER_UNIT
-    pixels[12:23] = [random.choice(color_options_collection)] * PIXELS_PER_UNIT
-    pixels[24:35] = [random.choice(color_options_collection)] * PIXELS_PER_UNIT
-    pixels[36:47] = [random.choice(color_options_collection)] * PIXELS_PER_UNIT
-    pixels[48:59] = [random.choice(color_options_collection)] * PIXELS_PER_UNIT
-    pixels[60:71] = [random.choice(color_options_collection)] * PIXELS_PER_UNIT
-    pixels[72:83] = [random.choice(color_options_collection)] * PIXELS_PER_UNIT
+    pixels[0:11] = [get_random_color_from_set(color_options_collection)] * PIXELS_PER_UNIT
+    pixels[12:23] = [get_random_color_from_set(color_options_collection)] * PIXELS_PER_UNIT
+    pixels[24:35] = [get_random_color_from_set(color_options_collection)] * PIXELS_PER_UNIT
+    pixels[36:47] = [get_random_color_from_set(color_options_collection)] * PIXELS_PER_UNIT
+    pixels[48:59] = [get_random_color_from_set(color_options_collection)] * PIXELS_PER_UNIT
+    pixels[60:71] = [get_random_color_from_set(color_options_collection)] * PIXELS_PER_UNIT
 
     pixels.show()
     light_pattern_next_delay = random.uniform(0, 2)
@@ -246,39 +220,11 @@ def turn_on_lights(change_state=True):
             print(e)
             pass
 
-    light_pattern = get_pattern_by_date(date.today())
+    color_pattern = get_pattern_by_date(date.today())
 
-    if light_pattern == "christmas":
-        red = (255, 0, 0, 0)
-        green = (0, 255, 0, 0)
+    if len(color_pattern) > 0:
+        light_pattern_delay = execute_light_pattern(color_pattern)
 
-        light_pattern_delay = execute_light_pattern((red, green))
-    elif light_pattern == "newyears":
-        blue = (0, 0, 255)
-        cyan = (0, 255, 255)
-        azure = (0, 128, 255)
-        midnight = (25, 25, 112)
-        royal_blue = (45, 90, 255)
-        medium_blue = (0, 0, 155)
-
-        light_pattern_delay = execute_light_pattern((blue, cyan, azure, midnight, royal_blue, medium_blue))
-    elif light_pattern == "valentines":
-        red = (255, 0, 0, 0)
-        white = (255, 255, 255, 0)
-        pink = (255, 192, 203, 0)
-
-        light_pattern_delay = execute_light_pattern((red, white, pink))
-    elif light_pattern == "stpatricks":
-        green = (0, 255, 0, 0)
-        white = (255, 255, 255, 0)
-
-        light_pattern_delay = execute_light_pattern((green, white))
-    elif light_pattern == "patriotic":
-        red = (255, 0, 0, 0)
-        white = (255, 255, 255, 0)
-        blue = (0, 0, 255, 0)
-
-        light_pattern_delay = execute_light_pattern((red, white, blue))
     return light_pattern_delay
 
 
