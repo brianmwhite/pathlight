@@ -4,6 +4,7 @@ import random
 import signal
 import time
 from datetime import date
+from itertools import cycle
 
 import board
 import neopixel
@@ -188,6 +189,23 @@ def execute_light_pattern(color_options_collection):
 
     pixels.show()
     light_pattern_next_delay = random.uniform(0, 2)
+
+    return light_pattern_next_delay
+
+
+def execute_static_light_pattern(color_options_collection):
+    color_cycle_loop = cycle(color_options_collection)
+
+    pixels[0:11] = [convert_hex_to_tuple(next(color_cycle_loop))] * PIXELS_PER_UNIT
+    pixels[12:23] = [convert_hex_to_tuple(next(color_cycle_loop))] * PIXELS_PER_UNIT
+    pixels[24:35] = [convert_hex_to_tuple(next(color_cycle_loop))] * PIXELS_PER_UNIT
+    pixels[36:47] = [convert_hex_to_tuple(next(color_cycle_loop))] * PIXELS_PER_UNIT
+    pixels[48:59] = [convert_hex_to_tuple(next(color_cycle_loop))] * PIXELS_PER_UNIT
+    pixels[60:71] = [convert_hex_to_tuple(next(color_cycle_loop))] * PIXELS_PER_UNIT
+
+    pixels.show()
+
+    light_pattern_next_delay = -1
 
     return light_pattern_next_delay
 
