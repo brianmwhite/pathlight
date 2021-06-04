@@ -189,17 +189,17 @@ def get_random_color_from_set(color_set):
 
 
 def send_colors_to_neopixels(lights):
-    if lights:
+    if not lights:
+        pixels.fill(NEOPIXEL_OFF_COLOR)
+    elif len(lights) == 1:
+        pixels.fill(lights[0])
+    elif len(lights) == 6:
         pixels[0:11] = [lights[0]] * PIXELS_PER_UNIT
         pixels[12:23] = [lights[1]] * PIXELS_PER_UNIT
         pixels[24:35] = [lights[2]] * PIXELS_PER_UNIT
         pixels[36:47] = [lights[3]] * PIXELS_PER_UNIT
         pixels[48:59] = [lights[4]] * PIXELS_PER_UNIT
         pixels[60:71] = [lights[5]] * PIXELS_PER_UNIT
-    elif len(lights) == 1:
-        pixels.fill(lights[0])
-    else:
-        pixels.fill(NEOPIXEL_OFF_COLOR)
 
     pixels.show()
 
