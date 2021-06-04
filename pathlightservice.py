@@ -72,16 +72,22 @@ DEVICE_STATE = {'light_is_on': False, 'light_color': DEFAULT_COLOR}
 STATUS_CHECKIN_DELAY = config_settings.getfloat("STATUS_CHECKIN_DELAY")
 last_time_status_check_in = 0.0
 
+BLINK_RANDOM_MIN_SECONDS = config_settings.getfloat("BLINK_RANDOM_MIN_SECONDS")
+BLINK_RANDOM_MAX_SECONDS = config_settings.getfloat("BLINK_RANDOM_MAX_SECONDS")
+
 # neopixel setup
 PIXEL_DATA_PIN = board.D18
 NUMBER_OF_TOTAL_LINKED_PIXELS = 84
 PIXELS_PER_UNIT = 12
+MAX_NEOPIXEL_BRIGHTNESS = config_settings.getfloat("MAX_NEOPIXEL_BRIGHTNESS")
 
 ORDER = neopixel.GRBW
 
 pixels = neopixel.NeoPixel(
-    PIXEL_DATA_PIN, NUMBER_OF_TOTAL_LINKED_PIXELS, brightness=1.0, auto_write=False, pixel_order=ORDER
+    PIXEL_DATA_PIN, NUMBER_OF_TOTAL_LINKED_PIXELS, brightness=MAX_NEOPIXEL_BRIGHTNESS, auto_write=False, pixel_order=ORDER
 )
+
+NEOPIXEL_OFF_COLOR = (0, 0, 0, 0)
 
 
 class exit_monitor_setup:
@@ -140,34 +146,37 @@ def set_light_color(target_color_as_hex):
         pixels.show()
 
 
+def save_light_state_to_pickle():
+    try:
+        with open(PICKLE_FILE_LOCATION, 'wb') as datafile:
+            pickle.dump(DEVICE_STATE, datafile)
+            print(
+                f"saved light state={DEVICE_STATE['light_is_on']}")
+    except pickle.UnpicklingError as e:
+        print(e)
+        pass
+    except (AttributeError, EOFError, ImportError, IndexError) as e:
+        print(e)
+        pass
+    except Exception as e:
+        print(e)
+        pass
+
+
 def turn_off_lights(change_state=True):
     global DEVICE_STATE
     DEVICE_STATE['light_is_on'] = False
 
     if change_state:
         print("turning lights OFF ....")
-        try:
-            with open(PICKLE_FILE_LOCATION, 'wb') as datafile:
-                pickle.dump(DEVICE_STATE, datafile)
-                print(
-                    f"saved light state={DEVICE_STATE['light_is_on']}")
-        except pickle.UnpicklingError as e:
-            print(e)
-            pass
-        except (AttributeError, EOFError, ImportError, IndexError) as e:
-            print(e)
-            pass
-        except Exception as e:
-            print(e)
-            pass
+        save_light_state_to_pickle()
 
-    pixels.fill((0, 0, 0, 0))
-    pixels.show()
+    send_colors_to_neopixels([NEOPIXEL_OFF_COLOR])
 
 
 def get_pattern_by_date(date_to_check):
     date_key = date_to_check.strftime("%m/%d")
-    return color_pattern_by_date.get(date_key, [])
+    return color_pattern_by_date.get(date_key)
 
 
 def convert_hex_to_tuple(hex_string):
@@ -179,68 +188,76 @@ def get_random_color_from_set(color_set):
     return convert_hex_to_tuple(hex_color)
 
 
-def execute_light_pattern(color_options_collection):
-    pixels[0:11] = [get_random_color_from_set(color_options_collection)] * PIXELS_PER_UNIT
-    pixels[12:23] = [get_random_color_from_set(color_options_collection)] * PIXELS_PER_UNIT
-    pixels[24:35] = [get_random_color_from_set(color_options_collection)] * PIXELS_PER_UNIT
-    pixels[36:47] = [get_random_color_from_set(color_options_collection)] * PIXELS_PER_UNIT
-    pixels[48:59] = [get_random_color_from_set(color_options_collection)] * PIXELS_PER_UNIT
-    pixels[60:71] = [get_random_color_from_set(color_options_collection)] * PIXELS_PER_UNIT
-
-    pixels.show()
-    light_pattern_next_delay = random.uniform(0, 2)
-
-    return light_pattern_next_delay
-
-
-def execute_static_light_pattern(color_options_collection):
-    color_cycle_loop = cycle(color_options_collection)
-
-    pixels[0:11] = [convert_hex_to_tuple(next(color_cycle_loop))] * PIXELS_PER_UNIT
-    pixels[12:23] = [convert_hex_to_tuple(next(color_cycle_loop))] * PIXELS_PER_UNIT
-    pixels[24:35] = [convert_hex_to_tuple(next(color_cycle_loop))] * PIXELS_PER_UNIT
-    pixels[36:47] = [convert_hex_to_tuple(next(color_cycle_loop))] * PIXELS_PER_UNIT
-    pixels[48:59] = [convert_hex_to_tuple(next(color_cycle_loop))] * PIXELS_PER_UNIT
-    pixels[60:71] = [convert_hex_to_tuple(next(color_cycle_loop))] * PIXELS_PER_UNIT
+def send_colors_to_neopixels(lights):
+    if lights:
+        pixels[0:11] = [lights[0]] * PIXELS_PER_UNIT
+        pixels[12:23] = [lights[1]] * PIXELS_PER_UNIT
+        pixels[24:35] = [lights[2]] * PIXELS_PER_UNIT
+        pixels[36:47] = [lights[3]] * PIXELS_PER_UNIT
+        pixels[48:59] = [lights[4]] * PIXELS_PER_UNIT
+        pixels[60:71] = [lights[5]] * PIXELS_PER_UNIT
+    elif len(lights) == 1:
+        pixels.fill(lights[0])
+    else:
+        pixels.fill(NEOPIXEL_OFF_COLOR)
 
     pixels.show()
 
-    light_pattern_next_delay = -1
 
-    return light_pattern_next_delay
+def light_loop(current_timestamp, last_pattern_timestamp):
+    lights, pattern_delay = get_light_colors_and_blink_delay
+
+    if DEVICE_STATE['light_is_on'] and pattern_delay >= 0 and (current_timestamp - last_pattern_timestamp > pattern_delay):
+        send_colors_to_neopixels(lights)
+        last_time_pattern_update = time.monotonic()
+
+    return last_time_pattern_update
 
 
-def turn_on_lights(change_state=True):
+def get_light_colors_and_blink_delay():
+    light_pattern_delay = -1
+    color_pattern = get_pattern_by_date(date.today())
+    lights = []
+
+    if color_pattern and color_pattern[0] == "SOLID":
+        color_cycle_loop = cycle(color_pattern[1])
+        lights = [
+            convert_hex_to_tuple(next(color_cycle_loop)),
+            convert_hex_to_tuple(next(color_cycle_loop)),
+            convert_hex_to_tuple(next(color_cycle_loop)),
+            convert_hex_to_tuple(next(color_cycle_loop)),
+            convert_hex_to_tuple(next(color_cycle_loop)),
+            convert_hex_to_tuple(next(color_cycle_loop)),
+        ]
+    elif color_pattern and color_pattern[0] == "BLINK_RANDOM":
+        lights = [
+            get_random_color_from_set(color_pattern[1]),
+            get_random_color_from_set(color_pattern[1]),
+            get_random_color_from_set(color_pattern[1]),
+            get_random_color_from_set(color_pattern[1]),
+            get_random_color_from_set(color_pattern[1]),
+            get_random_color_from_set(color_pattern[1]),
+        ]
+
+        light_pattern_delay = random.uniform(BLINK_RANDOM_MIN_SECONDS, BLINK_RANDOM_MAX_SECONDS)
+    else:
+        color = convert_hex_to_tuple(DEVICE_STATE['light_color'])
+        lights = [color, color, color, color, color, color]
+
+    return lights, light_pattern_delay
+
+
+def turn_on_lights():
     global DEVICE_STATE
     DEVICE_STATE['light_is_on'] = True
-    light_pattern_delay = 60
 
-    if change_state:
-        print("turning lights ON ....")
-        print(f"color={DEVICE_STATE['light_color']}")
+    light_colors, light_pattern_delay = get_light_colors_and_blink_delay()
 
-        pixels.fill(tuple(bytes.fromhex(DEVICE_STATE['light_color'])))
-        pixels.show()
+    print("turning lights ON ....")
+    print(f"color={DEVICE_STATE['light_color']}")
 
-        try:
-            with open(PICKLE_FILE_LOCATION, 'wb') as datafile:
-                pickle.dump(DEVICE_STATE, datafile)
-                print(
-                    f"saved light state={DEVICE_STATE['light_is_on']}")
-        except pickle.UnpicklingError as e:
-            print(e)
-            pass
-        except (AttributeError, EOFError, ImportError, IndexError) as e:
-            print(e)
-            pass
-        except Exception as e:
-            print(e)
-            pass
-
-    color_pattern = get_pattern_by_date(date.today())
-
-    if len(color_pattern) > 0:
-        light_pattern_delay = execute_light_pattern(color_pattern)
+    save_light_state_to_pickle()
+    send_colors_to_neopixels(light_colors)
 
     return light_pattern_delay
 
@@ -284,9 +301,7 @@ if __name__ == '__main__':
         time.sleep(0.001)
         current_seconds_count = time.monotonic()
 
-        if DEVICE_STATE['light_is_on'] and (current_seconds_count - last_time_pattern_update > pattern_delay):
-            pattern_delay = turn_on_lights(change_state=False)
-            last_time_pattern_update = time.monotonic()
+        last_time_pattern_update = light_loop(current_seconds_count, last_time_pattern_update)
 
         if current_seconds_count - last_time_status_check_in > STATUS_CHECKIN_DELAY:
             last_time_status_check_in = current_seconds_count
