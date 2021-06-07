@@ -207,7 +207,7 @@ def send_colors_to_neopixels(lights):
 def light_loop(current_timestamp, last_pattern_timestamp):
     lights, pattern_delay = get_light_colors_and_blink_delay()
     new_last_pattern_timestamp = last_pattern_timestamp
-    
+
     if DEVICE_STATE['light_is_on'] and pattern_delay >= 0 and (current_timestamp - last_pattern_timestamp > pattern_delay):
         send_colors_to_neopixels(lights)
         new_last_pattern_timestamp = time.monotonic()
