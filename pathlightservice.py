@@ -77,7 +77,7 @@ BLINK_RANDOM_MAX_SECONDS = config_settings.getfloat("BLINK_RANDOM_MAX_SECONDS")
 
 # neopixel setup
 PIXEL_DATA_PIN = board.D18
-NUMBER_OF_TOTAL_LINKED_PIXELS = 72
+NUMBER_OF_TOTAL_LINKED_PIXELS = 84
 PIXELS_PER_UNIT = 12
 MAX_NEOPIXEL_BRIGHTNESS = config_settings.getfloat("MAX_NEOPIXEL_BRIGHTNESS")
 
@@ -193,13 +193,14 @@ def send_colors_to_neopixels(lights):
         pixels.fill(NEOPIXEL_OFF_COLOR)
     elif len(lights) == 1:
         pixels.fill(lights[0])
-    elif len(lights) == 6:
+    elif len(lights) == 7:
         pixels[0:12] = [lights[0]] * PIXELS_PER_UNIT
         pixels[12:24] = [lights[1]] * PIXELS_PER_UNIT
         pixels[24:36] = [lights[2]] * PIXELS_PER_UNIT
         pixels[36:48] = [lights[3]] * PIXELS_PER_UNIT
         pixels[48:60] = [lights[4]] * PIXELS_PER_UNIT
         pixels[60:72] = [lights[5]] * PIXELS_PER_UNIT
+        pixels[72:84] = [lights[6]] * PIXELS_PER_UNIT
 
     pixels.show()
 
@@ -229,9 +230,11 @@ def get_light_colors_and_blink_delay():
             convert_hex_to_tuple(next(color_cycle_loop)),
             convert_hex_to_tuple(next(color_cycle_loop)),
             convert_hex_to_tuple(next(color_cycle_loop)),
+            convert_hex_to_tuple(next(color_cycle_loop)),
         ]
     elif color_pattern and color_pattern[0] == "BLINK_RANDOM":
         lights = [
+            get_random_color_from_set(color_pattern[1]),
             get_random_color_from_set(color_pattern[1]),
             get_random_color_from_set(color_pattern[1]),
             get_random_color_from_set(color_pattern[1]),
@@ -243,7 +246,7 @@ def get_light_colors_and_blink_delay():
         light_pattern_delay = random.uniform(BLINK_RANDOM_MIN_SECONDS, BLINK_RANDOM_MAX_SECONDS)
     else:
         color = convert_hex_to_tuple(DEVICE_STATE['light_color'])
-        lights = [color, color, color, color, color, color]
+        lights = [color, color, color, color, color, color, color]
 
     return lights, light_pattern_delay
 
