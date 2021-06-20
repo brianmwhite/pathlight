@@ -77,7 +77,7 @@ BLINK_RANDOM_MAX_SECONDS = config_settings.getfloat("BLINK_RANDOM_MAX_SECONDS")
 
 # neopixel setup
 PIXEL_DATA_PIN = board.D18
-NUMBER_OF_TOTAL_LINKED_PIXELS = 84
+NUMBER_OF_TOTAL_LINKED_PIXELS = 72
 PIXELS_PER_UNIT = 12
 MAX_NEOPIXEL_BRIGHTNESS = config_settings.getfloat("MAX_NEOPIXEL_BRIGHTNESS")
 
@@ -194,12 +194,12 @@ def send_colors_to_neopixels(lights):
     elif len(lights) == 1:
         pixels.fill(lights[0])
     elif len(lights) == 6:
-        pixels[0:11] = [lights[0]] * PIXELS_PER_UNIT
-        pixels[12:23] = [lights[1]] * PIXELS_PER_UNIT
-        pixels[24:35] = [lights[2]] * PIXELS_PER_UNIT
-        pixels[36:47] = [lights[3]] * PIXELS_PER_UNIT
-        pixels[48:59] = [lights[4]] * PIXELS_PER_UNIT
-        pixels[60:71] = [lights[5]] * PIXELS_PER_UNIT
+        pixels[0:12] = [lights[0]] * PIXELS_PER_UNIT
+        pixels[12:24] = [lights[1]] * PIXELS_PER_UNIT
+        pixels[24:36] = [lights[2]] * PIXELS_PER_UNIT
+        pixels[36:48] = [lights[3]] * PIXELS_PER_UNIT
+        pixels[48:60] = [lights[4]] * PIXELS_PER_UNIT
+        pixels[60:72] = [lights[5]] * PIXELS_PER_UNIT
 
     pixels.show()
 
