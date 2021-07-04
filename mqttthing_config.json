@@ -17,5 +17,6 @@
     "offValue": "OFF",
     "accessory": "mqttthing",
     "hex": true,
-    "hexPrefix": ""
+    "hexPrefix": "",
+    "adaptiveLighting": false
 }
