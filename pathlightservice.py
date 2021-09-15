@@ -12,19 +12,26 @@ import paho.mqtt.client as mqtt
 
 import pathlightconfig
 
+# install commands
+# sudo pip3 install simple_term_menu
+# sudo pip3 install paho-mqtt
+# git clone https://github.com/brianmwhite/pathlight.git
+# sudo cp pathlight.service /etc/systemd/system/
+# sudo systemctl enable pathlight
+
 # ./deploy_local.sh
 # ./svcmenu.py
 
-# sudo systemctl start beltlight
-# sudo systemctl stop beltlight
-# sudo systemctl restart beltlight
+# sudo systemctl start pathlight
+# sudo systemctl stop pathlight
+# sudo systemctl restart pathlight
 
-# systemctl status beltlight
-# journalctl -u beltlight -f
+# systemctl status pathlight
+# journalctl -u pathlight -f
 
-# sudo systemctl disable beltlight
-# sudo cp beltlight.service /etc/systemd/system/
-# sudo systemctl enable beltlight
+# sudo systemctl disable pathlight
+# sudo cp pathlight.service /etc/systemd/system/
+# sudo systemctl enable pathlight
 
 # git commands to ignore changes specific file
 # git update-index config.ini
