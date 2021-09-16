@@ -3,6 +3,11 @@
 SERVICENAME="pathlight"
 DELETEPICKLE=false
 
+if [ "$EUID" == 0 ]
+  then echo "!!! do not run as sudo/root !!!"
+  exit
+fi
+
 git fetch
 
 if [ "$(git rev-parse HEAD)" != "$(git rev-parse @\{u\})" ]; then
