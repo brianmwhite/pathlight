@@ -4,7 +4,7 @@ import neopixel
 
 
 pixel_pin = board.D18
-num_pixels = 84
+num_pixels = 108
 
 ORDER = neopixel.GRBW
 
