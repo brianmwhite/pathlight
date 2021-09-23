@@ -208,6 +208,8 @@ def send_colors_to_neopixels(lights):
         pixels[48:60] = [lights[4]] * PIXELS_PER_UNIT
         pixels[60:72] = [lights[5]] * PIXELS_PER_UNIT
         pixels[72:84] = [lights[6]] * PIXELS_PER_UNIT
+        pixels[84:96] = [lights[7]] * PIXELS_PER_UNIT
+        pixels[96:108] = [lights[8]] * PIXELS_PER_UNIT
 
     pixels.show()
 
@@ -238,9 +240,13 @@ def get_light_colors_and_blink_delay():
             convert_hex_to_tuple(next(color_cycle_loop)),
             convert_hex_to_tuple(next(color_cycle_loop)),
             convert_hex_to_tuple(next(color_cycle_loop)),
+            convert_hex_to_tuple(next(color_cycle_loop)),
+            convert_hex_to_tuple(next(color_cycle_loop)),
         ]
     elif color_pattern and color_pattern[0] == "BLINK_RANDOM":
         lights = [
+            get_random_color_from_set(color_pattern[1]),
+            get_random_color_from_set(color_pattern[1]),
             get_random_color_from_set(color_pattern[1]),
             get_random_color_from_set(color_pattern[1]),
             get_random_color_from_set(color_pattern[1]),
@@ -253,7 +259,7 @@ def get_light_colors_and_blink_delay():
         light_pattern_delay = random.uniform(BLINK_RANDOM_MIN_SECONDS, BLINK_RANDOM_MAX_SECONDS)
     else:
         color = convert_hex_to_tuple(DEVICE_STATE['light_color'])
-        lights = [color, color, color, color, color, color, color]
+        lights = [color, color, color, color, color, color, color, color, color]
 
     return lights, light_pattern_delay
 
