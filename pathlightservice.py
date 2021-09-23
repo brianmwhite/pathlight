@@ -200,7 +200,7 @@ def send_colors_to_neopixels(lights):
         pixels.fill(NEOPIXEL_OFF_COLOR)
     elif len(lights) == 1:
         pixels.fill(lights[0])
-    elif len(lights) == 7:
+    elif len(lights) == 9:
         pixels[0:12] = [lights[0]] * PIXELS_PER_UNIT
         pixels[12:24] = [lights[1]] * PIXELS_PER_UNIT
         pixels[24:36] = [lights[2]] * PIXELS_PER_UNIT
