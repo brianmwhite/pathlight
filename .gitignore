@@ -1,2 +1,5 @@
 pathlight.pickle
 __pycache__/*
+
+.vscode
+.DS_Store
