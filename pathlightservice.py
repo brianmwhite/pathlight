@@ -79,19 +79,23 @@ DEVICE_STATE = {'light_is_on': False, 'light_color': DEFAULT_COLOR}
 STATUS_CHECKIN_DELAY = config_settings.getfloat("STATUS_CHECKIN_DELAY")
 last_time_status_check_in = 0.0
 
-BLINK_RANDOM_MIN_SECONDS = config_settings.getfloat("BLINK_RANDOM_MIN_SECONDS")
-BLINK_RANDOM_MAX_SECONDS = config_settings.getfloat("BLINK_RANDOM_MAX_SECONDS")
-
 # neopixel setup
-PIXEL_DATA_PIN = board.D18
-NUMBER_OF_TOTAL_LINKED_PIXELS = 108
-PIXELS_PER_UNIT = 12
+PIXEL_DATA_PIN = board.Pin(config_settings.getint('PIXEL_DATA_PIN'))
+PIXELS_PER_UNIT = config_settings.getint('PIXELS_PER_LIGHT')
+NUMBER_OF_LIGHTS = config_settings.getint('NUMBER_OF_LIGHTS')
+NUMBER_OF_TOTAL_LINKED_PIXELS = PIXELS_PER_UNIT * NUMBER_OF_LIGHTS
+
+
 MAX_NEOPIXEL_BRIGHTNESS = config_settings.getfloat("MAX_NEOPIXEL_BRIGHTNESS")
 
 ORDER = neopixel.GRBW
 
 pixels = neopixel.NeoPixel(
-    PIXEL_DATA_PIN, NUMBER_OF_TOTAL_LINKED_PIXELS, brightness=MAX_NEOPIXEL_BRIGHTNESS, auto_write=False, pixel_order=ORDER
+    PIXEL_DATA_PIN,
+    NUMBER_OF_TOTAL_LINKED_PIXELS,
+    brightness=MAX_NEOPIXEL_BRIGHTNESS,
+    auto_write=False,
+    pixel_order=ORDER
 )
 
 NEOPIXEL_OFF_COLOR = (0, 0, 0, 0)
@@ -200,83 +204,44 @@ def send_colors_to_neopixels(lights):
         pixels.fill(NEOPIXEL_OFF_COLOR)
     elif len(lights) == 1:
         pixels.fill(lights[0])
-    elif len(lights) == 9:
-        pixels[0:12] = [lights[0]] * PIXELS_PER_UNIT
-        pixels[12:24] = [lights[1]] * PIXELS_PER_UNIT
-        pixels[24:36] = [lights[2]] * PIXELS_PER_UNIT
-        pixels[36:48] = [lights[3]] * PIXELS_PER_UNIT
-        pixels[48:60] = [lights[4]] * PIXELS_PER_UNIT
-        pixels[60:72] = [lights[5]] * PIXELS_PER_UNIT
-        pixels[72:84] = [lights[6]] * PIXELS_PER_UNIT
-        pixels[84:96] = [lights[7]] * PIXELS_PER_UNIT
-        pixels[96:108] = [lights[8]] * PIXELS_PER_UNIT
+    else:
+        FIRST_PIXEL_IN_LIGHT = 0
+        LAST_PIXEL_IN_LIGHT = PIXELS_PER_UNIT
+
+        for x in range(NUMBER_OF_LIGHTS):
+            pixels[FIRST_PIXEL_IN_LIGHT:PIXELS_PER_UNIT] = [lights[x]] * PIXELS_PER_UNIT
+            FIRST_PIXEL_IN_LIGHT += PIXELS_PER_UNIT
+            LAST_PIXEL_IN_LIGHT += PIXELS_PER_UNIT
 
     pixels.show()
 
 
-def light_loop(current_timestamp, last_pattern_timestamp):
-    lights, pattern_delay = get_light_colors_and_blink_delay()
-    new_last_pattern_timestamp = last_pattern_timestamp
-
-    if DEVICE_STATE['light_is_on'] and pattern_delay >= 0 and (current_timestamp - last_pattern_timestamp > pattern_delay):
-        send_colors_to_neopixels(lights)
-        new_last_pattern_timestamp = time.monotonic()
-
-    return new_last_pattern_timestamp
-
-
-def get_light_colors_and_blink_delay():
-    light_pattern_delay = -1
+def get_light_colors():
     color_pattern = get_pattern_by_date(date.today())
     lights = []
 
     if color_pattern and color_pattern[0] == "SOLID":
         color_cycle_loop = cycle(color_pattern[1])
-        lights = [
-            convert_hex_to_tuple(next(color_cycle_loop)),
-            convert_hex_to_tuple(next(color_cycle_loop)),
-            convert_hex_to_tuple(next(color_cycle_loop)),
-            convert_hex_to_tuple(next(color_cycle_loop)),
-            convert_hex_to_tuple(next(color_cycle_loop)),
-            convert_hex_to_tuple(next(color_cycle_loop)),
-            convert_hex_to_tuple(next(color_cycle_loop)),
-            convert_hex_to_tuple(next(color_cycle_loop)),
-            convert_hex_to_tuple(next(color_cycle_loop)),
-        ]
-    elif color_pattern and color_pattern[0] == "BLINK_RANDOM":
-        lights = [
-            get_random_color_from_set(color_pattern[1]),
-            get_random_color_from_set(color_pattern[1]),
-            get_random_color_from_set(color_pattern[1]),
-            get_random_color_from_set(color_pattern[1]),
-            get_random_color_from_set(color_pattern[1]),
-            get_random_color_from_set(color_pattern[1]),
-            get_random_color_from_set(color_pattern[1]),
-            get_random_color_from_set(color_pattern[1]),
-            get_random_color_from_set(color_pattern[1]),
-        ]
-
-        light_pattern_delay = random.uniform(BLINK_RANDOM_MIN_SECONDS, BLINK_RANDOM_MAX_SECONDS)
+        for _ in range(NUMBER_OF_LIGHTS):
+            lights.append(convert_hex_to_tuple(next(color_cycle_loop)))
     else:
         color = convert_hex_to_tuple(DEVICE_STATE['light_color'])
-        lights = [color, color, color, color, color, color, color, color, color]
+        lights = [color]
 
-    return lights, light_pattern_delay
+    return lights
 
 
 def turn_on_lights():
     global DEVICE_STATE
     DEVICE_STATE['light_is_on'] = True
 
-    light_colors, light_pattern_delay = get_light_colors_and_blink_delay()
+    light_colors = get_light_colors()
 
     print("turning lights ON ....")
     print(f"color={DEVICE_STATE['light_color']}")
 
     save_light_state_to_pickle()
     send_colors_to_neopixels(light_colors)
-
-    return light_pattern_delay
 
 
 if __name__ == '__main__':
@@ -317,8 +282,6 @@ if __name__ == '__main__':
         # found this solution https://stackoverflow.com/a/41749754
         time.sleep(0.001)
         current_seconds_count = time.monotonic()
-
-        last_time_pattern_update = light_loop(current_seconds_count, last_time_pattern_update)
 
         if current_seconds_count - last_time_status_check_in > STATUS_CHECKIN_DELAY:
             last_time_status_check_in = current_seconds_count
