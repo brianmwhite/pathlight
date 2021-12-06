@@ -7,7 +7,6 @@ from datetime import date
 from itertools import cycle
 
 import board
-from microcontroller import Pin
 import neopixel
 import paho.mqtt.client as mqtt
 
@@ -84,8 +83,13 @@ last_time_status_check_in = 0.0
 PIXEL_DATA_PIN = board.D18
 
 PIXELS_PER_UNIT = config_settings.getint('PIXELS_PER_LIGHT')
+print(f"PIXELS_PER_UNIT={PIXELS_PER_UNIT}")
+
 NUMBER_OF_LIGHTS = config_settings.getint('NUMBER_OF_LIGHTS')
+print(f"NUMBER_OF_LIGHTS={NUMBER_OF_LIGHTS}")
+
 NUMBER_OF_TOTAL_LINKED_PIXELS = PIXELS_PER_UNIT * NUMBER_OF_LIGHTS
+print(f"NUMBER_OF_TOTAL_LINKED_PIXELS={NUMBER_OF_TOTAL_LINKED_PIXELS}")
 
 
 MAX_NEOPIXEL_BRIGHTNESS = config_settings.getfloat("MAX_NEOPIXEL_BRIGHTNESS")
@@ -211,7 +215,8 @@ def send_colors_to_neopixels(lights):
         LAST_PIXEL_IN_LIGHT = PIXELS_PER_UNIT
 
         for x in range(NUMBER_OF_LIGHTS):
-            pixels[FIRST_PIXEL_IN_LIGHT:PIXELS_PER_UNIT] = [lights[x]] * PIXELS_PER_UNIT
+            pixels[FIRST_PIXEL_IN_LIGHT:LAST_PIXEL_IN_LIGHT] = [lights[x]] * PIXELS_PER_UNIT
+
             FIRST_PIXEL_IN_LIGHT += PIXELS_PER_UNIT
             LAST_PIXEL_IN_LIGHT += PIXELS_PER_UNIT
 
