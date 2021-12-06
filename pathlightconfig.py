@@ -1,5 +1,19 @@
 from datetime import datetime
 from datetime import timedelta
+import board
+
+
+def lookup_pin(pin_number):
+    if pin_number == 10:
+        return board.D10
+    elif pin_number == 12:
+        return board.D12
+    elif pin_number == 18:
+        return board.D18
+    elif pin_number == 21:
+        return board.D21
+    else:
+        return board.D18
 
 
 def parse_color_pattern_from_string(config_value_as_string):

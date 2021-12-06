@@ -6,7 +6,6 @@ import time
 from datetime import date
 from itertools import cycle
 
-import board
 import neopixel
 import paho.mqtt.client as mqtt
 
@@ -80,7 +79,7 @@ STATUS_CHECKIN_DELAY = config_settings.getfloat("STATUS_CHECKIN_DELAY")
 last_time_status_check_in = 0.0
 
 # neopixel setup
-PIXEL_DATA_PIN = board.D18
+PIXEL_DATA_PIN = pathlightconfig.lookup_pin(config_settings.getint('PIXEL_DATA_PIN'))
 
 PIXELS_PER_UNIT = config_settings.getint('PIXELS_PER_LIGHT')
 print(f"PIXELS_PER_UNIT={PIXELS_PER_UNIT}")
