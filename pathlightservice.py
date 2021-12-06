@@ -81,7 +81,7 @@ STATUS_CHECKIN_DELAY = config_settings.getfloat("STATUS_CHECKIN_DELAY")
 last_time_status_check_in = 0.0
 
 # neopixel setup
-PIXEL_DATA_PIN = Pin(config_settings.getint('PIXEL_DATA_PIN'))
+PIXEL_DATA_PIN = board.D18
 
 PIXELS_PER_UNIT = config_settings.getint('PIXELS_PER_LIGHT')
 NUMBER_OF_LIGHTS = config_settings.getint('NUMBER_OF_LIGHTS')
