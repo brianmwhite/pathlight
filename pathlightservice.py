@@ -5,6 +5,7 @@ import signal
 import time
 from datetime import date
 from itertools import cycle
+# from rgbw_colorspace_converter.colors.converters import RGB, HSV, HSL, HSI, Hex
 
 import neopixel
 import paho.mqtt.client as mqtt
@@ -180,8 +181,23 @@ def Convert_RGBW_String_To_Hex(input_string: str):
 
 
 def set_brightness(brightness_value: int):
-    pixels.brightness = (255 / brightness_value)
-    pixels.show()
+    # global DEVICE_STATE
+    # color_as_hex = DEVICE_STATE['light_color']
+    # color_as_rbgw_tuple = Convert_Hex_To_RGBW_Tuple(color_as_hex)
+
+    # color = RGB(0, 0, 0)
+    # color.rgbw = color_as_rbgw_tuple
+
+    # # color_as_hls = colorsys.rgb_to_hls(color_as_rbgw_tuple[0],
+    #                                      color_as_rbgw_tuple[1],
+    #                                      color_as_rbgw_tuple[2])
+    # # new_color_as_rgb_tuple = colorsys.hls_to_rgb(color_as_hls[0],
+    #                                                brightness_value, color_as_hls[2])
+    # # # scaled_brightness = (255 / brightness_value)
+    # # pixels.brightness = scaled_brightness
+
+    # print(f"brightness={brightness_value}")
+    # pixels.show()
     client.publish(MQTT_GETBRIGHTNESS_PATH, brightness_value)
 
 
