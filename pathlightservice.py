@@ -77,7 +77,11 @@ MQTT_OFF_VALUE = config_settings.get("MQTT_OFF_VALUE")
 PICKLE_FILE_LOCATION = config_settings.get("PICKLE_FILE_LOCATION")
 
 DEFAULT_COLOR = config_settings.get("DEFAULT_COLOR")
-DEVICE_STATE = {'light_is_on': False, 'light_color': DEFAULT_COLOR}
+
+DEVICE_STATE = {'light_is_on': False,
+                'light_color': DEFAULT_COLOR,
+                'light_color_rgb': (255, 255, 255),
+                'brightness': 255}
 
 STATUS_CHECKIN_DELAY = config_settings.getfloat("STATUS_CHECKIN_DELAY")
 last_time_status_check_in = 0.0
@@ -157,11 +161,14 @@ def on_message(client, userdata, message):
     elif message.topic == MQTT_SETRGB_PATH:
         COLOR_AS_RGB_STRING = str(message.payload.decode("utf-8"))
         rgb_tuple = Convert_Comma_Separated_String_To_Tuple(COLOR_AS_RGB_STRING)
+        DEVICE_STATE["light_color_rgb"] = rgb_tuple
         rgbw_tuple = Convert_RGB_to_RGBW(rgb_tuple)
         set_light_color(rgbw_tuple)
     elif message.topic == MQTT_SETBRIGHTNESS_PATH:
         brightness_value_as_string = str(message.payload.decode("utf-8"))
-        set_brightness(int(brightness_value_as_string))
+        brightness_value_as_int = int(brightness_value_as_string)
+        DEVICE_STATE["brightness"] = brightness_value_as_int
+        set_brightness(brightness_value_as_int)
 
 
 def Convert_RGB_to_RGBW(rgb_tuple: tuple):
@@ -195,8 +202,7 @@ def Convert_RGBW_Tuple_To_Hex(input_tuple: tuple):
 
 
 def set_brightness(brightness_value: int):
-    global COLOR_AS_RGB_STRING
-    rgb_tuple = Convert_Comma_Separated_String_To_Tuple(COLOR_AS_RGB_STRING)
+    rgb_tuple = DEVICE_STATE["light_color_rgb"]
     color = RGB(rgb_tuple[0], rgb_tuple[1], rgb_tuple[2])
     scaled_brightness_value = brightness_value / 255
     color.hsv_v = scaled_brightness_value
