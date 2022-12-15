@@ -7,3 +7,5 @@ mqtt:
       availability_topic: "homeassistant/light/pathlight/available"
       rgbw_state_topic: "homeassistant/light/pathlight/rgbw"
       rgbw_command_topic: "homeassistant/light/pathlight/rgbw/set"
+      brightness_state_topic: "homeassistant/light/pathlight/brightness"
+      brightness_command_topic: "homeassistant/light/pathlight/brightness/set"

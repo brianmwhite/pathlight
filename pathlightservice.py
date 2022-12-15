@@ -63,6 +63,9 @@ MQTT_GETON_PATH = config_settings.get("MQTT_GETON_PATH")
 MQTT_SETRGBW_PATH = config_settings.get("MQTT_SETRGBW_PATH")
 MQTT_GETRGBW_PATH = config_settings.get("MQTT_GETRGBW_PATH")
 
+MQTT_SETBRIGHTNESS_PATH = config_settings.get("MQTT_SETBRIGHTNESS_PATH")
+MQTT_GETBRIGHTNESS_PATH = config_settings.get("MQTT_GETBRIGHTNESS_PATH")
+
 MQTT_GETONLINE_PATH = config_settings.get("MQTT_GETONLINE_PATH")
 MQTT_ONLINEVALUE = config_settings.get("MQTT_ONLINEVALUE")
 MQTT_OFFLINEVALUE = config_settings.get("MQTT_OFFLINEVALUE")
@@ -149,6 +152,9 @@ def on_message(client, userdata, message):
     elif message.topic == MQTT_SETRGBW_PATH:
         target_color_as_rgbw_string = str(message.payload.decode("utf-8"))
         set_light_color(target_color_as_rgbw_string)
+    elif message.topic == MQTT_SETBRIGHTNESS_PATH:
+        brightness_value_as_string = str(message.payload.decode("utf-8"))
+        set_brightness(int(brightness_value_as_string))
 
 
 def Convert_RGBW_String_To_Tuple(input_string: str):
@@ -171,6 +177,11 @@ def Convert_RGB_Tuple_To_Hex(input_tuple: tuple):
 def Convert_RGBW_String_To_Hex(input_string: str):
     t = Convert_RGBW_String_To_Tuple(input_string)
     return Convert_RGB_Tuple_To_Hex(t)
+
+
+def set_brightness(brightness_value: int):
+    pixels.brightness = (255 / brightness_value)
+    client.publish(MQTT_GETBRIGHTNESS_PATH, brightness_value)
 
 
 def set_light_color(target_color_as_rgbw_string):
@@ -299,8 +310,6 @@ if __name__ == '__main__':
     print("started light service...")
     last_time_status_check_in = time.monotonic()
     last_time_pattern_update = time.monotonic()
-
-    pattern_delay = 0
 
     if DEVICE_STATE['light_is_on']:
         turn_on_lights()
