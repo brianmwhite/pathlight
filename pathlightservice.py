@@ -132,6 +132,7 @@ def on_connect(client, userdata, flags, rc):
     client.subscribe("$SYS/#")
     client.subscribe(MQTT_SETON_PATH)
     client.subscribe(MQTT_SETRGB_PATH)
+    client.subscribe(MQTT_SETBRIGHTNESS_PATH)
 
 
 # The callback for when a DISCONNECT message is received from the server.
