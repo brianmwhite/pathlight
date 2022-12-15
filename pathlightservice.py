@@ -147,18 +147,45 @@ def on_message(client, userdata, message):
             turn_off_lights()
             client.publish(MQTT_GETON_PATH, MQTT_OFF_VALUE)
     elif message.topic == MQTT_SETRGBW_PATH:
-        TARGET_COLOR_AS_HEX = str(message.payload.decode("utf-8"))
-        set_light_color(TARGET_COLOR_AS_HEX)
+        target_color_as_rgbw_string = str(message.payload.decode("utf-8"))
+        set_light_color(target_color_as_rgbw_string)
 
 
-def set_light_color(target_color_as_hex):
+def Convert_RGBW_String_To_Tuple(input_string: str):
+    return tuple(int(item) if item.isdigit()
+                 else item for item in input_string.split(','))
+
+
+def Convert_Hex_To_RGBW_Tuple(hex_string: str):
+    return tuple(bytes.fromhex(hex_string))
+
+
+# def Convert_RGBW_Tuple_To_String(input_tuple: tuple):
+#     return ','.join(str(item) for item in input_tuple)
+
+
+def Convert_RGB_Tuple_To_Hex(input_tuple: tuple):
+    return '%02X%02X%02X%02X' % input_tuple
+
+
+def Convert_RGBW_String_To_Hex(input_string: str):
+    t = Convert_RGBW_String_To_Tuple(input_string)
+    return Convert_RGB_Tuple_To_Hex(t)
+
+
+def set_light_color(target_color_as_rgbw_string):
     global DEVICE_STATE
+
+    target_color_as_hex = Convert_RGBW_String_To_Hex(target_color_as_rgbw_string)
     DEVICE_STATE['light_color'] = target_color_as_hex
-    client.publish(MQTT_GETRGBW_PATH, target_color_as_hex)
+
+    client.publish(MQTT_GETRGBW_PATH, target_color_as_rgbw_string)
     print(f"color={target_color_as_hex}")
 
+    rgbw_tuple = Convert_RGBW_String_To_Tuple(target_color_as_rgbw_string)
+
     if DEVICE_STATE['light_is_on'] is True:
-        pixels.fill(tuple(bytes.fromhex(DEVICE_STATE['light_color'])))
+        pixels.fill(rgbw_tuple)
         pixels.show()
 
 
@@ -195,13 +222,9 @@ def get_pattern_by_date(date_to_check):
     return color_pattern_by_date.get(date_key)
 
 
-def convert_hex_to_tuple(hex_string):
-    return tuple(bytes.fromhex(hex_string))
-
-
 def get_random_color_from_set(color_set):
     hex_color = random.choice(color_set)
-    return convert_hex_to_tuple(hex_color)
+    return Convert_Hex_To_RGBW_Tuple(hex_color)
 
 
 def send_colors_to_neopixels(lights):
@@ -214,7 +237,8 @@ def send_colors_to_neopixels(lights):
         LAST_PIXEL_IN_LIGHT = PIXELS_PER_UNIT
 
         for x in range(NUMBER_OF_LIGHTS):
-            pixels[FIRST_PIXEL_IN_LIGHT:LAST_PIXEL_IN_LIGHT] = [lights[x]] * PIXELS_PER_UNIT
+            pixels[FIRST_PIXEL_IN_LIGHT:LAST_PIXEL_IN_LIGHT] = ([lights[x]]
+                                                                * PIXELS_PER_UNIT)
 
             FIRST_PIXEL_IN_LIGHT += PIXELS_PER_UNIT
             LAST_PIXEL_IN_LIGHT += PIXELS_PER_UNIT
@@ -229,9 +253,9 @@ def get_light_colors():
     if color_pattern and color_pattern[0] == "SOLID":
         color_cycle_loop = cycle(color_pattern[1])
         for _ in range(NUMBER_OF_LIGHTS):
-            lights.append(convert_hex_to_tuple(next(color_cycle_loop)))
+            lights.append(Convert_Hex_To_RGBW_Tuple(next(color_cycle_loop)))
     else:
-        color = convert_hex_to_tuple(DEVICE_STATE['light_color'])
+        color = Convert_Hex_To_RGBW_Tuple(DEVICE_STATE['light_color'])
         lights = [color]
 
     return lights
