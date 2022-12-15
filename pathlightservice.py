@@ -181,6 +181,7 @@ def Convert_RGBW_String_To_Hex(input_string: str):
 
 def set_brightness(brightness_value: int):
     pixels.brightness = (255 / brightness_value)
+    pixels.show()
     client.publish(MQTT_GETBRIGHTNESS_PATH, brightness_value)
 
 
