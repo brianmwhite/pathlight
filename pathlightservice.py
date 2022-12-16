@@ -219,6 +219,8 @@ def set_brightness(brightness_value: int):
     print(f"rgbw_tuple after={rgbw_tuple}")
     print(f"color after={color.hex}, brightness={scaled_brightness_value}")
 
+    DEVICE_STATE["light_color_rgb"] = color.rgb
+
     if DEVICE_STATE['light_is_on'] is True:
         pixels.fill(rgbw_tuple)
         pixels.show()
