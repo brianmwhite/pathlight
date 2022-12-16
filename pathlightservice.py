@@ -212,12 +212,15 @@ def set_brightness(brightness_value: int):
         rgb_tuple = (255, 255, 255)
     color = RGB(rgb_tuple[0], rgb_tuple[1], rgb_tuple[2])
     scaled_brightness_value = brightness_value / 255
+    print(f"color.hsv before={color.hsv}")
     color.hsv_v = scaled_brightness_value
-
-    print(f"color={color.hex}, brightness={scaled_brightness_value}")
+    print(f"color.hsv after={color.hsv}")
+    rgbw_tuple = color.rgbw
+    print(f"rgbw_tuple after={rgbw_tuple}")
+    print(f"color after={color.hex}, brightness={scaled_brightness_value}")
 
     if DEVICE_STATE['light_is_on'] is True:
-        pixels.fill(color.rgbw)
+        pixels.fill(rgbw_tuple)
         pixels.show()
 
     client.publish(MQTT_GETBRIGHTNESS_PATH, brightness_value)
