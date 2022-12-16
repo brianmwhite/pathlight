@@ -115,6 +115,8 @@ NEOPIXEL_OFF_COLOR = (0, 0, 0, 0)
 
 COLOR_AS_RGB_STRING = "255,255,255"
 
+OVERRIDE_PATTERN = False
+
 
 class exit_monitor_setup:
     exit_now_flag_raised = False
@@ -148,6 +150,7 @@ def on_disconnect(client, userdata, rc):
 def on_message(client, userdata, message):
     global last_time_status_check_in
     global COLOR_AS_RGB_STRING
+    global OVERRIDE_PATTERN
 
     if message.topic == MQTT_SETON_PATH:
         last_time_status_check_in = time.monotonic()
@@ -157,12 +160,15 @@ def on_message(client, userdata, message):
             client.publish(MQTT_GETON_PATH, MQTT_ON_VALUE)
         elif str(message.payload.decode("utf-8")) == MQTT_OFF_VALUE:
             turn_off_lights()
+            OVERRIDE_PATTERN = False
             client.publish(MQTT_GETON_PATH, MQTT_OFF_VALUE)
     elif message.topic == MQTT_SETRGB_PATH:
+        OVERRIDE_PATTERN = True
         COLOR_AS_RGB_STRING = str(message.payload.decode("utf-8"))
         rgb_tuple = Convert_Comma_Separated_String_To_Tuple(COLOR_AS_RGB_STRING)
         set_light_color(rgb_tuple)
     elif message.topic == MQTT_SETBRIGHTNESS_PATH:
+        OVERRIDE_PATTERN = True
         brightness_value_as_string = str(message.payload.decode("utf-8"))
         brightness_value_as_int = int(brightness_value_as_string)
         DEVICE_STATE["brightness"] = brightness_value_as_int
@@ -296,7 +302,7 @@ def get_light_colors():
     color_pattern = get_pattern_by_date(date.today())
     lights = []
 
-    if color_pattern and color_pattern[0] == "SOLID":
+    if not OVERRIDE_PATTERN and color_pattern and color_pattern[0] == "SOLID":
         color_cycle_loop = cycle(color_pattern[1])
         for _ in range(NUMBER_OF_LIGHTS):
             lights.append(Convert_Hex_To_Tuple(next(color_cycle_loop)))
