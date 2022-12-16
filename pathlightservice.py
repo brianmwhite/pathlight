@@ -113,7 +113,7 @@ pixels = neopixel.NeoPixel(
 
 NEOPIXEL_OFF_COLOR = (0, 0, 0, 0)
 
-COLOR_AS_RGB_STRING = ""
+COLOR_AS_RGB_STRING = "255,255,255"
 
 
 class exit_monitor_setup:
@@ -161,9 +161,7 @@ def on_message(client, userdata, message):
     elif message.topic == MQTT_SETRGB_PATH:
         COLOR_AS_RGB_STRING = str(message.payload.decode("utf-8"))
         rgb_tuple = Convert_Comma_Separated_String_To_Tuple(COLOR_AS_RGB_STRING)
-        DEVICE_STATE["light_color_rgb"] = rgb_tuple
-        rgbw_tuple = Convert_RGB_to_RGBW(rgb_tuple)
-        set_light_color(rgbw_tuple)
+        set_light_color(rgb_tuple)
     elif message.topic == MQTT_SETBRIGHTNESS_PATH:
         brightness_value_as_string = str(message.payload.decode("utf-8"))
         brightness_value_as_int = int(brightness_value_as_string)
@@ -188,8 +186,8 @@ def Convert_Hex_To_Tuple(hex_string: str):
     return tuple(bytes.fromhex(hex_string))
 
 
-# def Convert_RGBW_Tuple_To_String(input_tuple: tuple):
-#     return ','.join(str(item) for item in input_tuple)
+def Convert_Tuple_To_String(input_tuple: tuple):
+    return ','.join(str(item) for item in input_tuple)
 
 
 def Convert_RGBW_Tuple_To_Hex(input_tuple: tuple):
@@ -202,7 +200,10 @@ def Convert_RGBW_Tuple_To_Hex(input_tuple: tuple):
 
 
 def set_brightness(brightness_value: int):
+    global DEVICE_STATE
     rgb_tuple = DEVICE_STATE["light_color_rgb"]
+    if not rgb_tuple:
+        rgb_tuple = (255, 255, 255)
     color = RGB(rgb_tuple[0], rgb_tuple[1], rgb_tuple[2])
     scaled_brightness_value = brightness_value / 255
     color.hsv_v = scaled_brightness_value
@@ -216,17 +217,21 @@ def set_brightness(brightness_value: int):
     client.publish(MQTT_GETBRIGHTNESS_PATH, brightness_value)
 
 
-def set_light_color(target_color_as_rgbw_tuple: tuple):
+def set_light_color(target_color_as_rgb_tuple: tuple):
     global DEVICE_STATE
 
-    target_color_as_hex = Convert_RGBW_Tuple_To_Hex(target_color_as_rgbw_tuple)
+    DEVICE_STATE["light_color_rgb"] = target_color_as_rgb_tuple
+    rgb_string = Convert_Tuple_To_String(target_color_as_rgb_tuple)
+    rgbw_tuple = Convert_RGB_to_RGBW(target_color_as_rgb_tuple)
+
+    target_color_as_hex = Convert_RGBW_Tuple_To_Hex(rgbw_tuple)
     DEVICE_STATE['light_color'] = target_color_as_hex
 
-    client.publish(MQTT_GETRGB_PATH, COLOR_AS_RGB_STRING)
+    client.publish(MQTT_GETRGB_PATH, rgb_string)
     print(f"color={target_color_as_hex}")
 
     if DEVICE_STATE['light_is_on'] is True:
-        pixels.fill(target_color_as_rgbw_tuple)
+        pixels.fill(rgbw_tuple)
         pixels.show()
 
 
@@ -296,8 +301,10 @@ def get_light_colors():
         for _ in range(NUMBER_OF_LIGHTS):
             lights.append(Convert_Hex_To_Tuple(next(color_cycle_loop)))
     else:
-        color = Convert_Hex_To_Tuple(DEVICE_STATE['light_color'])
-        lights = [color]
+        rgb_color = DEVICE_STATE['light_color_rgb']
+        rgbw_color = Convert_RGB_to_RGBW(rgb_color)
+        
+        lights = [rgbw_color]
 
     return lights
 
