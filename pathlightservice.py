@@ -15,6 +15,7 @@ import pathlightconfig
 # install commands
 # sudo pip3 install simple_term_menu
 # sudo pip3 install paho-mqtt
+# sudo pip3 install rgbw_colorspace_converter
 # git clone https://github.com/brianmwhite/pathlight.git
 # sudo cp pathlight.service /etc/systemd/system/
 # sudo systemctl enable pathlight
