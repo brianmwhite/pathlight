@@ -1,0 +1,11 @@
+mqtt:
+  light:
+    - unique_id: pathlight
+      name: "Path Lights"
+      state_topic: "homeassistant/light/pathlight"
+      command_topic: "homeassistant/light/pathlight/switch"
+      availability_topic: "homeassistant/light/pathlight/available"
+      rgb_state_topic: "homeassistant/light/pathlight/rgb"
+      rgb_command_topic: "homeassistant/light/pathlight/rgb/set"
+      brightness_state_topic: "homeassistant/light/pathlight/brightness"
+      brightness_command_topic: "homeassistant/light/pathlight/brightness/set"

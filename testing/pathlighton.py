@@ -4,13 +4,14 @@ import neopixel
 
 
 pixel_pin = board.D18
-num_pixels = 108
+num_pixels = 120
 
 ORDER = neopixel.GRBW
 
 pixels = neopixel.NeoPixel(
     pixel_pin, num_pixels, brightness=1.0, auto_write=False, pixel_order=ORDER
 )
+
 
 def wheel(pos):
     # Input a value 0 to 255 to get a color value.

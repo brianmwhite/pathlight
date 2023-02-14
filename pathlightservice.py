@@ -5,6 +5,7 @@ import signal
 import time
 from datetime import date
 from itertools import cycle
+from rgbw_colorspace_converter.colors.converters import RGB
 
 import neopixel
 import paho.mqtt.client as mqtt
@@ -14,6 +15,7 @@ import pathlightconfig
 # install commands
 # sudo pip3 install simple_term_menu
 # sudo pip3 install paho-mqtt
+# sudo pip3 install rgbw_colorspace_converter
 # git clone https://github.com/brianmwhite/pathlight.git
 # sudo cp pathlight.service /etc/systemd/system/
 # sudo systemctl enable pathlight
@@ -60,8 +62,11 @@ MQTT_PORT = config_settings.getint('MQTT_PORT')
 MQTT_SETON_PATH = config_settings.get("MQTT_SETON_PATH")
 MQTT_GETON_PATH = config_settings.get("MQTT_GETON_PATH")
 
-MQTT_SETRGBW_PATH = config_settings.get("MQTT_SETRGBW_PATH")
-MQTT_GETRGBW_PATH = config_settings.get("MQTT_GETRGBW_PATH")
+MQTT_SETRGB_PATH = config_settings.get("MQTT_SETRGB_PATH")
+MQTT_GETRGB_PATH = config_settings.get("MQTT_GETRGB_PATH")
+
+MQTT_SETBRIGHTNESS_PATH = config_settings.get("MQTT_SETBRIGHTNESS_PATH")
+MQTT_GETBRIGHTNESS_PATH = config_settings.get("MQTT_GETBRIGHTNESS_PATH")
 
 MQTT_GETONLINE_PATH = config_settings.get("MQTT_GETONLINE_PATH")
 MQTT_ONLINEVALUE = config_settings.get("MQTT_ONLINEVALUE")
@@ -73,7 +78,11 @@ MQTT_OFF_VALUE = config_settings.get("MQTT_OFF_VALUE")
 PICKLE_FILE_LOCATION = config_settings.get("PICKLE_FILE_LOCATION")
 
 DEFAULT_COLOR = config_settings.get("DEFAULT_COLOR")
-DEVICE_STATE = {'light_is_on': False, 'light_color': DEFAULT_COLOR}
+
+DEVICE_STATE = {'light_is_on': False,
+                'light_color': DEFAULT_COLOR,
+                'light_color_rgb': (255, 255, 255),
+                'brightness': 255}
 
 STATUS_CHECKIN_DELAY = config_settings.getfloat("STATUS_CHECKIN_DELAY")
 last_time_status_check_in = 0.0
@@ -105,6 +114,10 @@ pixels = neopixel.NeoPixel(
 
 NEOPIXEL_OFF_COLOR = (0, 0, 0, 0)
 
+COLOR_AS_RGB_STRING = "255,255,255"
+
+OVERRIDE_PATTERN = False
+
 
 class exit_monitor_setup:
     exit_now_flag_raised = False
@@ -125,7 +138,8 @@ def on_connect(client, userdata, flags, rc):
     # reconnect then subscriptions will be renewed.
     client.subscribe("$SYS/#")
     client.subscribe(MQTT_SETON_PATH)
-    client.subscribe(MQTT_SETRGBW_PATH)
+    client.subscribe(MQTT_SETRGB_PATH)
+    client.subscribe(MQTT_SETBRIGHTNESS_PATH)
 
 
 # The callback for when a DISCONNECT message is received from the server.
@@ -136,29 +150,100 @@ def on_disconnect(client, userdata, rc):
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, message):
     global last_time_status_check_in
+    global COLOR_AS_RGB_STRING
+    global OVERRIDE_PATTERN
 
     if message.topic == MQTT_SETON_PATH:
         last_time_status_check_in = time.monotonic()
 
         if str(message.payload.decode("utf-8")) == MQTT_ON_VALUE:
             turn_on_lights()
-            client.publish(MQTT_GETON_PATH, MQTT_ON_VALUE)
+            client.publish(MQTT_GETON_PATH, MQTT_ON_VALUE, retain=True)
         elif str(message.payload.decode("utf-8")) == MQTT_OFF_VALUE:
             turn_off_lights()
-            client.publish(MQTT_GETON_PATH, MQTT_OFF_VALUE)
-    elif message.topic == MQTT_SETRGBW_PATH:
-        TARGET_COLOR_AS_HEX = str(message.payload.decode("utf-8"))
-        set_light_color(TARGET_COLOR_AS_HEX)
+            OVERRIDE_PATTERN = False
+            client.publish(MQTT_GETON_PATH, MQTT_OFF_VALUE, retain=True)
+    elif message.topic == MQTT_SETRGB_PATH:
+        OVERRIDE_PATTERN = True
+        COLOR_AS_RGB_STRING = str(message.payload.decode("utf-8"))
+        rgb_tuple = Convert_Comma_Separated_String_To_Tuple(COLOR_AS_RGB_STRING)
+        set_light_color(rgb_tuple)
+    elif message.topic == MQTT_SETBRIGHTNESS_PATH:
+        OVERRIDE_PATTERN = True
+        brightness_value_as_string = str(message.payload.decode("utf-8"))
+        brightness_value_as_int = int(brightness_value_as_string)
+        DEVICE_STATE["brightness"] = brightness_value_as_int
+        set_brightness(brightness_value_as_int)
 
 
-def set_light_color(target_color_as_hex):
+def Convert_RGB_to_RGBW(rgb_tuple: tuple):
+    print(f"rgb={rgb_tuple}")
+    color = RGB(rgb_tuple[0], rgb_tuple[1], rgb_tuple[2])
+    rgbw = color.rgbw
+    print(f"rgbw={rgbw}")
+    return rgbw
+
+
+def Convert_Comma_Separated_String_To_Tuple(input_string: str):
+    return tuple(int(item) if item.isdigit()
+                 else item for item in input_string.split(','))
+
+
+def Convert_Hex_To_Tuple(hex_string: str):
+    return tuple(bytes.fromhex(hex_string))
+
+
+def Convert_Tuple_To_String(input_tuple: tuple):
+    return ','.join(str(item) for item in input_tuple)
+
+
+def Convert_RGBW_Tuple_To_Hex(input_tuple: tuple):
+    return '%02X%02X%02X%02X' % input_tuple
+
+
+# def Convert_RGB_String_To_Hex(input_string: str):
+#     t = Convert_Comma_Separated_String_To_Tuple(input_string)
+#     return Convert_RGB_Tuple_To_Hex(t)
+
+
+def set_brightness(brightness_value: int):
     global DEVICE_STATE
+    rgb_tuple = DEVICE_STATE["light_color_rgb"]
+    if not rgb_tuple:
+        rgb_tuple = (255, 255, 255)
+    color = RGB(rgb_tuple[0], rgb_tuple[1], rgb_tuple[2])
+    scaled_brightness_value = brightness_value / 255
+    print(f"color.hsv before={color.hsv}")
+    color.hsv_v = scaled_brightness_value
+    print(f"color.hsv after={color.hsv}")
+    rgbw_tuple = color.rgbw
+    print(f"rgbw_tuple after={rgbw_tuple}")
+    print(f"color after={color.hex}, brightness={scaled_brightness_value}")
+
+    DEVICE_STATE["light_color_rgb"] = color.rgb
+
+    if DEVICE_STATE['light_is_on'] is True:
+        pixels.fill(rgbw_tuple)
+        pixels.show()
+
+    client.publish(MQTT_GETBRIGHTNESS_PATH, brightness_value, retain=True)
+
+
+def set_light_color(target_color_as_rgb_tuple: tuple):
+    global DEVICE_STATE
+
+    DEVICE_STATE["light_color_rgb"] = target_color_as_rgb_tuple
+    rgb_string = Convert_Tuple_To_String(target_color_as_rgb_tuple)
+    rgbw_tuple = Convert_RGB_to_RGBW(target_color_as_rgb_tuple)
+
+    target_color_as_hex = Convert_RGBW_Tuple_To_Hex(rgbw_tuple)
     DEVICE_STATE['light_color'] = target_color_as_hex
-    client.publish(MQTT_GETRGBW_PATH, target_color_as_hex)
+
+    client.publish(MQTT_GETRGB_PATH, rgb_string, retain=True)
     print(f"color={target_color_as_hex}")
 
     if DEVICE_STATE['light_is_on'] is True:
-        pixels.fill(tuple(bytes.fromhex(DEVICE_STATE['light_color'])))
+        pixels.fill(rgbw_tuple)
         pixels.show()
 
 
@@ -195,13 +280,9 @@ def get_pattern_by_date(date_to_check):
     return color_pattern_by_date.get(date_key)
 
 
-def convert_hex_to_tuple(hex_string):
-    return tuple(bytes.fromhex(hex_string))
-
-
 def get_random_color_from_set(color_set):
     hex_color = random.choice(color_set)
-    return convert_hex_to_tuple(hex_color)
+    return Convert_Hex_To_Tuple(hex_color)
 
 
 def send_colors_to_neopixels(lights):
@@ -214,7 +295,8 @@ def send_colors_to_neopixels(lights):
         LAST_PIXEL_IN_LIGHT = PIXELS_PER_UNIT
 
         for x in range(NUMBER_OF_LIGHTS):
-            pixels[FIRST_PIXEL_IN_LIGHT:LAST_PIXEL_IN_LIGHT] = [lights[x]] * PIXELS_PER_UNIT
+            pixels[FIRST_PIXEL_IN_LIGHT:LAST_PIXEL_IN_LIGHT] = ([lights[x]]
+                                                                * PIXELS_PER_UNIT)
 
             FIRST_PIXEL_IN_LIGHT += PIXELS_PER_UNIT
             LAST_PIXEL_IN_LIGHT += PIXELS_PER_UNIT
@@ -226,13 +308,15 @@ def get_light_colors():
     color_pattern = get_pattern_by_date(date.today())
     lights = []
 
-    if color_pattern and color_pattern[0] == "SOLID":
+    if not OVERRIDE_PATTERN and color_pattern and color_pattern[0] == "SOLID":
         color_cycle_loop = cycle(color_pattern[1])
         for _ in range(NUMBER_OF_LIGHTS):
-            lights.append(convert_hex_to_tuple(next(color_cycle_loop)))
+            lights.append(Convert_Hex_To_Tuple(next(color_cycle_loop)))
     else:
-        color = convert_hex_to_tuple(DEVICE_STATE['light_color'])
-        lights = [color]
+        rgb_color = DEVICE_STATE['light_color_rgb']
+        rgbw_color = Convert_RGB_to_RGBW(rgb_color)
+        
+        lights = [rgbw_color]
 
     return lights
 
@@ -276,8 +360,6 @@ if __name__ == '__main__':
     last_time_status_check_in = time.monotonic()
     last_time_pattern_update = time.monotonic()
 
-    pattern_delay = 0
-
     if DEVICE_STATE['light_is_on']:
         turn_on_lights()
     else:
@@ -292,7 +374,7 @@ if __name__ == '__main__':
         if current_seconds_count - last_time_status_check_in > STATUS_CHECKIN_DELAY:
             last_time_status_check_in = current_seconds_count
 
-            client.publish(MQTT_GETONLINE_PATH, MQTT_ONLINEVALUE)
+            client.publish(MQTT_GETONLINE_PATH, MQTT_ONLINEVALUE, retain=True)
 
     client.loop_stop()
     client.disconnect()
