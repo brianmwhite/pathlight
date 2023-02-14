@@ -158,11 +158,11 @@ def on_message(client, userdata, message):
 
         if str(message.payload.decode("utf-8")) == MQTT_ON_VALUE:
             turn_on_lights()
-            client.publish(MQTT_GETON_PATH, MQTT_ON_VALUE)
+            client.publish(MQTT_GETON_PATH, MQTT_ON_VALUE, retain=True)
         elif str(message.payload.decode("utf-8")) == MQTT_OFF_VALUE:
             turn_off_lights()
             OVERRIDE_PATTERN = False
-            client.publish(MQTT_GETON_PATH, MQTT_OFF_VALUE)
+            client.publish(MQTT_GETON_PATH, MQTT_OFF_VALUE, retain=True)
     elif message.topic == MQTT_SETRGB_PATH:
         OVERRIDE_PATTERN = True
         COLOR_AS_RGB_STRING = str(message.payload.decode("utf-8"))
@@ -226,7 +226,7 @@ def set_brightness(brightness_value: int):
         pixels.fill(rgbw_tuple)
         pixels.show()
 
-    client.publish(MQTT_GETBRIGHTNESS_PATH, brightness_value)
+    client.publish(MQTT_GETBRIGHTNESS_PATH, brightness_value, retain=True)
 
 
 def set_light_color(target_color_as_rgb_tuple: tuple):
@@ -239,7 +239,7 @@ def set_light_color(target_color_as_rgb_tuple: tuple):
     target_color_as_hex = Convert_RGBW_Tuple_To_Hex(rgbw_tuple)
     DEVICE_STATE['light_color'] = target_color_as_hex
 
-    client.publish(MQTT_GETRGB_PATH, rgb_string)
+    client.publish(MQTT_GETRGB_PATH, rgb_string, retain=True)
     print(f"color={target_color_as_hex}")
 
     if DEVICE_STATE['light_is_on'] is True:
@@ -374,7 +374,7 @@ if __name__ == '__main__':
         if current_seconds_count - last_time_status_check_in > STATUS_CHECKIN_DELAY:
             last_time_status_check_in = current_seconds_count
 
-            client.publish(MQTT_GETONLINE_PATH, MQTT_ONLINEVALUE)
+            client.publish(MQTT_GETONLINE_PATH, MQTT_ONLINEVALUE, retain=True)
 
     client.loop_stop()
     client.disconnect()
